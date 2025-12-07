@@ -8,10 +8,26 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        include:
+          # Python 3.7 使用 Ubuntu 20.04（因為 Ubuntu 24.04 不支援）
+          - os: ubuntu-20.04
+            python-version: '3.7'
+          # 其他版本使用最新的 Ubuntu
+          - os: ubuntu-latest
+            python-version: '3.8'
+          - os: ubuntu-latest
+            python-version: '3.9'
+          - os: ubuntu-latest
+            python-version: '3.10'
+          - os: ubuntu-latest
+            python-version: '3.11'
+          - os: ubuntu-latest
+            python-version: '3.12'
+    
+    runs-on: ${{ matrix.os }}
     
     steps:
     - name: 檢出程式碼
