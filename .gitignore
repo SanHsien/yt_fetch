@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 下載的影片檔案（不提交到 Git）
+download/*.mp4
+download/*.webm
+download/*.mkv
+download/*.m4a
+
+# 下載記錄檔案（包含已下載的影片 ID）
+download/.download_archive.txt
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日誌檔案
+*.log
+
+# Cookies 檔案（可能包含敏感資訊）
+cookies.txt
+*.cookies
+
+# 臨時檔案
+*.tmp
+*.temp
+
