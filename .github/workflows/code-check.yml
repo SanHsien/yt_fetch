@@ -9,20 +9,46 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
     
     steps:
-    - uses: actions/checkout@v3
+    - name: 檢出程式碼
+      uses: actions/checkout@v4
     
-    - name: 設定 Python
-      uses: actions/setup-python@v4
+    - name: 設定 Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.7'
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: 檢查 Python 版本
+      run: |
+        python --version
+        python -c "import sys; assert sys.version_info >= (3, 7), f'需要 Python 3.7+，當前版本: {sys.version}'"
     
     - name: 檢查語法
       run: |
         python -m py_compile yt_fetch.py
+        echo "✓ 語法檢查通過"
     
-    - name: 檢查依賴
+    - name: 檢查檔案結構
       run: |
-        python -c "import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)"
+        test -f yt_fetch.py || (echo "錯誤: 找不到 yt_fetch.py" && exit 1)
+        test -f requirements.txt || (echo "錯誤: 找不到 requirements.txt" && exit 1)
+        test -f README.md || (echo "錯誤: 找不到 README.md" && exit 1)
+        echo "✓ 檔案結構檢查通過"
+    
+    - name: 驗證 requirements.txt 格式
+      run: |
+        python -c "
+        import re
+        with open('requirements.txt', 'r') as f:
+            lines = [l.strip() for l in f if l.strip() and not l.startswith('#')]
+            for line in lines:
+                if not re.match(r'^[a-zA-Z0-9_-]+(?:[><=!]+[0-9.]+)?$', line.split(';')[0].split('[')[0].strip()):
+                    print(f'警告: 可能無效的依賴格式: {line}')
+        "
+        echo "✓ requirements.txt 格式檢查完成"
 

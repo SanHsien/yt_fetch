@@ -3,6 +3,8 @@
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-SanHsien%2Fyt_fetch-lightgrey.svg)](https://github.com/SanHsien/yt_fetch)
+[![GitHub stars](https://img.shields.io/github/stars/SanHsien/yt_fetch.svg?style=social&label=Star)](https://github.com/SanHsien/yt_fetch)
+[![GitHub forks](https://img.shields.io/github/forks/SanHsien/yt_fetch.svg?style=social&label=Fork)](https://github.com/SanHsien/yt_fetch)
 
 從指定 YouTube 頻道取得最新的 N 支影片並下載為 mp4，儲存到 `download/` 資料夾。
 
@@ -293,6 +295,10 @@ python yt_fetch.py --channel "@channel" --retries 5
 - `1`：參數錯誤或網路錯誤
 - `2`：需要 ffmpeg 但未安裝且無法回退
 
+## 貢獻
+
+歡迎貢獻！請查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解如何參與專案。
+
 ## 授權
 
 本專案採用 [MIT License](LICENSE) 授權。
@@ -326,6 +332,10 @@ python yt_fetch.py --channel "@channel" --retries 5
 5. 查看日誌輸出的詳細錯誤訊息
 
 ## 更新日誌
+
+詳細的更新記錄請查看 [CHANGELOG.md](CHANGELOG.md)。
+
+### 主要功能
 
 - 自動環境管理
 - 跨平台支援
