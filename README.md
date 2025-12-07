@@ -1,5 +1,9 @@
 # YouTube 頻道影片下載工具
 
+[![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-SanHsien%2Fyt_fetch-lightgrey.svg)](https://github.com/SanHsien/yt_fetch)
+
 從指定 YouTube 頻道取得最新的 N 支影片並下載為 mp4，儲存到 `download/` 資料夾。
 
 ## 功能特色
@@ -289,7 +293,11 @@ python yt_fetch.py --channel "@channel" --retries 5
 - `1`：參數錯誤或網路錯誤
 - `2`：需要 ffmpeg 但未安裝且無法回退
 
-## 授權與免責聲明
+## 授權
+
+本專案採用 [MIT License](LICENSE) 授權。
+
+## 免責聲明
 
 本工具僅供個人學習與研究使用。下載內容請遵守：
 

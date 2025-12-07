@@ -1,0 +1,28 @@
+name: 程式碼檢查
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: 設定 Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.7'
+    
+    - name: 檢查語法
+      run: |
+        python -m py_compile yt_fetch.py
+    
+    - name: 檢查依賴
+      run: |
+        python -c "import sys; sys.exit(0 if sys.version_info >= (3, 7) else 1)"
+
