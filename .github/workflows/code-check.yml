@@ -12,22 +12,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # 只測試關鍵版本以加快執行速度
           # Python 3.7 使用 Ubuntu 20.04（因為 Ubuntu 24.04 不支援）
           - os: ubuntu-20.04
             python-version: '3.7'
-          # 其他版本使用最新的 Ubuntu
-          - os: ubuntu-latest
-            python-version: '3.8'
-          - os: ubuntu-latest
-            python-version: '3.9'
-          - os: ubuntu-latest
-            python-version: '3.10'
+          # 測試最新穩定版本
           - os: ubuntu-latest
             python-version: '3.11'
+          # 測試最新版本
           - os: ubuntu-latest
             python-version: '3.12'
     
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     
     steps:
     - name: 檢出程式碼
