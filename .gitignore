@@ -46,3 +46,10 @@ cookies.txt
 *.tmp
 *.temp
 
+# 測試和覆蓋率
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
