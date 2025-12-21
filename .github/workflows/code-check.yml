@@ -55,13 +55,26 @@ jobs:
     
     - name: 驗證 requirements.txt 格式
       run: |
-        python -c "
+        python3 << 'EOF'
         import re
-        with open('requirements.txt', 'r') as f:
-            lines = [l.strip() for l in f if l.strip() and not l.startswith('#')]
-            for line in lines:
-                if not re.match(r'^[a-zA-Z0-9_-]+(?:[><=!]+[0-9.]+)?$', line.split(';')[0].split('[')[0].strip()):
-                    print(f'警告: 可能無效的依賴格式: {line}')
-        "
+        import sys
+        
+        try:
+            with open('requirements.txt', 'r', encoding='utf-8') as f:
+                lines = [l.strip() for l in f if l.strip() and not l.startswith('#')]
+                has_error = False
+                for line in lines:
+                    # 移除註解和額外選項
+                    clean_line = line.split(';')[0].split('[')[0].strip()
+                    # 支援標準的 pip 格式：package, package==version, package>=version 等
+                    if not re.match(r'^[a-zA-Z0-9_.-]+(?:[><=!]+[0-9.]+(?:\.\w+)?)?$', clean_line):
+                        print(f'警告: 可能無效的依賴格式: {line}')
+                        has_error = True
+                if not has_error:
+                    print('✓ requirements.txt 格式檢查通過')
+        except Exception as e:
+            print(f'錯誤: 無法讀取 requirements.txt: {e}')
+            sys.exit(1)
+        EOF
         echo "✓ requirements.txt 格式檢查完成"
 
