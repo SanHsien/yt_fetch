@@ -16,7 +16,7 @@
 
 請透過以下方式回報安全漏洞：
 
-1. **發送 Email**：sanhsien@gmail.com
+1. **發送 Email**：sanhsien (at) gmail.com
 2. **標題格式**：`[SECURITY] 簡短描述`
 3. **包含資訊**：
    - 漏洞的詳細描述
