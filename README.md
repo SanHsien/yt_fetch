@@ -5,8 +5,12 @@
 [![GitHub](https://img.shields.io/badge/GitHub-SanHsien%2Fyt_fetch-lightgrey.svg)](https://github.com/SanHsien/yt_fetch)
 [![GitHub stars](https://img.shields.io/github/stars/SanHsien/yt_fetch.svg?style=social&label=Star)](https://github.com/SanHsien/yt_fetch)
 [![GitHub forks](https://img.shields.io/github/forks/SanHsien/yt_fetch.svg?style=social&label=Fork)](https://github.com/SanHsien/yt_fetch)
+[![GitHub issues](https://img.shields.io/github/issues/SanHsien/yt_fetch.svg)](https://github.com/SanHsien/yt_fetch/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/SanHsien/yt_fetch.svg)](https://github.com/SanHsien/yt_fetch)
 
 從指定 YouTube 頻道取得最新的 N 支影片並下載為 mp4，儲存到 `download/` 資料夾。
+
+> ⚠️ **重要提醒**：本工具僅供個人學習與研究使用。請遵守 YouTube 服務條款與著作權法。
 
 ## 功能特色
 
@@ -298,6 +302,10 @@ python yt_fetch.py --channel "@channel" --retries 5
 ## 貢獻
 
 歡迎貢獻！請查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解如何參與專案。
+
+## 安全
+
+如果您發現安全漏洞，請查看 [SECURITY.md](SECURITY.md) 了解如何回報。
 
 ## 授權
 
