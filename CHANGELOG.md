@@ -12,6 +12,12 @@
 - Issue 和 Pull Request 模板
 - CONTRIBUTING.md 貢獻指南
 - CHANGELOG.md 更新日誌
+- `tests/test_smoke.py` 基本 smoke test，CI 執行 pytest
+- CI 加入 black / isort / flake8 風格與靜態檢查
+- CONTRIBUTING 補充本地測試與風格檢查指令
+- README 技術細節依賴改為 yt-dlp、imageio-ffmpeg
+- `pip install -e ".[dev]"` 可安裝 pytest；`yt-fetch` CLI 指令（`pip install -e .` 後可用）
+- pre-commit flake8 忽略 D（docstring）規則，避免雜訊
 
 ## [1.0.0] - 2024-12-06
 

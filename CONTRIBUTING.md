@@ -99,8 +99,8 @@ feat: 添加批次下載多個頻道的功能
 建議在本地執行以下指令來對齊 CI：
 
 ```bash
-# 安裝開發工具（若尚未安裝）
-python -m pip install pytest black isort flake8
+# 安裝專案與開發依賴（含 pytest、black、isort、flake8、pre-commit）
+pip install -e ".[dev]"
 
 # 執行測試與基本程式碼檢查
 pytest -q
@@ -108,6 +108,8 @@ black --check yt_fetch.py
 isort --check-only yt_fetch.py
 flake8 yt_fetch.py
 ```
+
+若已安裝 pre-commit，可執行 `pre-commit run --all-files` 一次跑完格式與靜態檢查。
 
 ## 審查流程
 

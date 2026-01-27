@@ -57,6 +57,17 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### 方法三：以套件方式安裝（可取得 `yt-fetch` 指令）
+
+若以可編輯模式安裝專案，可使用 `yt-fetch` 指令：
+
+```bash
+pip install -e .
+yt-fetch --channel "@channel_handle"
+```
+
+`yt-fetch` 的參數與 `python yt_fetch.py` 相同。
+
 ## 使用方法
 
 ### 方法一：互動式執行（推薦新手）
@@ -326,6 +337,7 @@ python yt_fetch.py --channel "@channel" --retries 5
 - **依賴套件**：yt-dlp、imageio-ffmpeg
 - **Python 版本**：3.7+
 - **虛擬環境**：自動建立 `.venv`
+- **CLI 指令**：`pip install -e .` 後可使用 `yt-fetch`
 - **下載目錄**：`download/`
 - **Archive 檔案**：`download/.download_archive.txt`
 
