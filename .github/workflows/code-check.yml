@@ -79,3 +79,20 @@ jobs:
         EOF
         echo "✓ requirements.txt 格式檢查完成"
 
+    - name: 安裝測試與開發工具
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pytest black isort flake8
+
+    - name: 執行測試
+      run: pytest -q
+
+    - name: 風格檢查 (black)
+      run: black --check yt_fetch.py
+
+    - name: 匯入排序檢查 (isort)
+      run: isort --check-only yt_fetch.py
+
+    - name: 語法與靜態檢查 (flake8)
+      run: flake8 yt_fetch.py
+

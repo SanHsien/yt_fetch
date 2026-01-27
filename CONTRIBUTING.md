@@ -48,7 +48,7 @@
 5. **建立 Pull Request**
    - 在 GitHub 上建立 Pull Request
    - 使用 [PR 模板](https://github.com/SanHsien/yt_fetch/compare) 填寫詳細說明
-   - 確保所有檢查都通過
+   - 確保所有檢查都通過（本地與 CI）
 
 ## 程式碼規範
 
@@ -95,6 +95,19 @@ feat: 添加批次下載多個頻道的功能
 - [ ] 已測試相關功能
 - [ ] 沒有引入新的錯誤或警告
 - [ ] 文件已更新（如果適用）
+
+建議在本地執行以下指令來對齊 CI：
+
+```bash
+# 安裝開發工具（若尚未安裝）
+python -m pip install pytest black isort flake8
+
+# 執行測試與基本程式碼檢查
+pytest -q
+black --check yt_fetch.py
+isort --check-only yt_fetch.py
+flake8 yt_fetch.py
+```
 
 ## 審查流程
 

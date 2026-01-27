@@ -323,7 +323,7 @@ python yt_fetch.py --channel "@channel" --retries 5
 
 ## 技術細節
 
-- **依賴套件**：yt-dlp
+- **依賴套件**：yt-dlp、imageio-ffmpeg
 - **Python 版本**：3.7+
 - **虛擬環境**：自動建立 `.venv`
 - **下載目錄**：`download/`
