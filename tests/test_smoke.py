@@ -13,4 +13,3 @@ def test_normalize_channel_url_handle():
 
     url = normalize_channel_url("@example_channel")
     assert url == "https://www.youtube.com/@example_channel/videos"
-

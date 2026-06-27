@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.7"
 license = {text = "MIT"}
 authors = [
-    {name = "SanHsien", email = "sanhsien (at) gmail.com"}
+    {name = "SanHsien"}
 ]
 keywords = ["youtube", "download", "video", "yt-dlp"]
 classifiers = [
