@@ -1,6 +1,6 @@
 # YouTube 頻道影片下載工具
 
-[English](README.en.md) | [發展路線圖](ROADMAP.md)
+[English](README.en.md)
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -311,6 +311,115 @@ python yt_fetch.py --channel "@channel" --retries 5
 - `0`：成功（有下載或已冪等）
 - `1`：參數錯誤或網路錯誤
 - `2`：需要 ffmpeg 但未安裝且無法回退
+
+## 發展路線圖
+
+`yt_fetch` 會維持簡單可用的 CLI，同時優先補上 GUI，讓不熟命令列的使用者也能選頻道、設定數量、查看進度與下載結果。
+
+### 近期目標
+
+#### 1. GUI 桌面介面（最高優先）
+
+目標是做一個薄層桌面介面，沿用現有下載邏輯，不重寫核心流程。
+
+- 輸入頻道 URL、ID 或 `@handle`
+- 設定下載數量、是否包含 Shorts、重試次數
+- 設定 cookies 來源、下載速率限制、下載間隔
+- 選擇或開啟 `download/` 資料夾
+- 顯示目前狀態、下載進度、成功/失敗摘要
+- 保留 CLI 作為穩定後備入口
+
+完成標準：
+
+- Windows 可直接啟動 GUI。
+- GUI 不阻塞主視窗，下載時可看進度。
+- 下載行為與 CLI 一致。
+- 不保存 cookies 內容，只保存必要設定或路徑。
+
+#### 2. 測試補強
+
+優先補純邏輯測試，不依賴真實 YouTube 網路回應。
+
+- `normalize_channel_url()` 支援格式測試：`@handle`、`handle`、`UC...` 頻道 ID、`/videos`、`/shorts`、playlist URL
+- 已下載 ID 解析測試：`download/.download_archive.txt` 與既有檔名中的 `[video_id]`
+- Shorts 與直播過濾測試
+- cookies、ratelimit、sleep 參數解析測試
+
+完成標準：
+
+- 主要 helper 函式有測試。
+- CI 不需要連線 YouTube。
+- 修 CLI 或 GUI 行為時能靠測試快速發現回歸。
+
+#### 3. 下載流程可測化
+
+目前主要流程集中在 `download_videos()`。短期先抽出低風險 helper，讓 GUI 與 CLI 能共用。
+
+- 頻道 URL 清單組裝
+- `yt-dlp` options 組裝
+- entries 去重與篩選
+- 下載成功判斷
+
+完成標準：
+
+- `download_videos()` 保留協調流程。
+- helper 可用單元測試覆蓋。
+- 不改變現有 CLI 介面與預設行為。
+
+### 中期目標
+
+#### 4. 使用者體驗修正
+
+- `--help` 不應輸出啟動 banner 或多餘 log。
+- ffmpeg 未安裝時的錯誤訊息保持明確。
+- cookies 相關說明補上安全提醒。
+- 下載失敗時整理更清楚的下一步建議。
+
+#### 5. 設定檔支援
+
+在不破壞 CLI 的前提下，評估加入簡單設定檔，例如 `yt_fetch.toml` 或 `yt_fetch.json`。
+
+可設定項：
+
+- 預設頻道
+- 預設下載數量
+- 是否包含 Shorts
+- 速率限制與下載間隔
+- cookies 來源路徑
+
+#### 6. 多頻道批次下載
+
+可能形式：
+
+- `--channels-file channels.txt`
+- 每行一個頻道 URL、ID 或 `@handle`
+
+完成標準：
+
+- 單一頻道失敗不會中斷全部批次。
+- 每個頻道有清楚結果摘要。
+- 預設仍保持保守速率，不新增平行大量下載。
+
+#### 7. 結果報表
+
+下載結束後產出簡單人可讀報表：
+
+- 已下載影片
+- 已跳過影片
+- 失敗影片與原因
+- archive 路徑
+
+### 長期方向
+
+- 套件發布整理：版本號規則、GitHub Release checklist、PyPI 發布可行性評估。
+- 更完整的跨平台驗證：Windows runner、macOS runner、`yt-fetch --help` smoke test、editable install 檢查。
+
+### 暫不做
+
+- 繞過 YouTube 付費牆、會員限定、私人影片、地區限制或其他存取控制。
+- 管理、交換、抽取或分享使用者 cookies/token。
+- 大量平行下載或規避限流。
+- 自動上傳雲端硬碟或第三方儲存服務。
 
 ## 貢獻
 

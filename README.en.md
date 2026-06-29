@@ -1,6 +1,6 @@
 # YouTube Channel Video Downloader
 
-[**English**](README.en.md) | [繁體中文](README.md) | [Roadmap](ROADMAP.md)
+[**English**](README.en.md) | [繁體中文](README.md)
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -318,6 +318,115 @@ Use `--include-shorts` if you want Shorts. Livestreams are never downloaded.
 - `0`: success, either videos were downloaded or the run was idempotent.
 - `1`: argument error or network error.
 - `2`: ffmpeg is required but not installed, and fallback is unavailable.
+
+## Roadmap
+
+`yt_fetch` will keep the CLI simple and reliable while prioritizing a GUI, so users who are not comfortable with command lines can choose a channel, set options, view progress, and review results more easily.
+
+### Near-Term Goals
+
+#### 1. GUI Desktop Interface (Highest Priority)
+
+The goal is a thin desktop interface that reuses the existing download logic instead of rewriting the core workflow.
+
+- Enter a channel URL, ID, or `@handle`.
+- Set download count, Shorts inclusion, and retry count.
+- Configure cookies source, download speed limit, and delay between downloads.
+- Select or open the `download/` folder.
+- Show current status, download progress, and success/failure summary.
+- Keep the CLI as the stable fallback entry point.
+
+Completion criteria:
+
+- The GUI can launch on Windows.
+- Downloads do not freeze the main window, and progress is visible.
+- Download behavior matches the CLI.
+- Cookies contents are not saved; only necessary settings or paths may be stored.
+
+#### 2. Test Coverage
+
+Prioritize pure logic tests that do not depend on live YouTube network responses.
+
+- `normalize_channel_url()` formats: `@handle`, `handle`, `UC...` channel ID, `/videos`, `/shorts`, playlist URL.
+- Downloaded ID parsing from `download/.download_archive.txt` and existing filenames containing `[video_id]`.
+- Shorts and livestream filtering.
+- cookies, ratelimit, and sleep option parsing.
+
+Completion criteria:
+
+- Main helper functions have tests.
+- CI does not need to connect to YouTube.
+- CLI or GUI behavior regressions can be caught quickly.
+
+#### 3. Make the Download Flow Easier to Test
+
+The main flow currently lives in `download_videos()`. Short term, extract low-risk helpers so CLI and GUI can share them.
+
+- Channel URL list construction.
+- `yt-dlp` options construction.
+- Entry deduplication and filtering.
+- Download success detection.
+
+Completion criteria:
+
+- `download_videos()` remains the orchestration layer.
+- Helpers are covered by unit tests.
+- Existing CLI interface and default behavior stay unchanged.
+
+### Mid-Term Goals
+
+#### 4. User Experience Fixes
+
+- `--help` should not print the startup banner or extra logs.
+- ffmpeg missing errors should stay clear.
+- cookies documentation should include stronger safety reminders.
+- Download failures should provide clearer next steps.
+
+#### 5. Configuration File Support
+
+Evaluate a simple config file without breaking the CLI, such as `yt_fetch.toml` or `yt_fetch.json`.
+
+Possible settings:
+
+- Default channel.
+- Default download count.
+- Whether to include Shorts.
+- Rate limit and delay between downloads.
+- cookies source path.
+
+#### 6. Multi-Channel Batch Downloads
+
+Possible form:
+
+- `--channels-file channels.txt`
+- One channel URL, ID, or `@handle` per line.
+
+Completion criteria:
+
+- One failed channel does not stop the whole batch.
+- Each channel has a clear result summary.
+- Defaults remain conservative; no large parallel downloading is added.
+
+#### 7. Result Reports
+
+Generate a simple human-readable report after downloads:
+
+- Downloaded videos.
+- Skipped videos.
+- Failed videos and reasons.
+- Archive path.
+
+### Long-Term Direction
+
+- Package release cleanup: versioning rules, GitHub Release checklist, PyPI feasibility.
+- Fuller cross-platform verification: Windows runner, macOS runner, `yt-fetch --help` smoke test, editable install check.
+
+### Not Planned
+
+- Bypassing YouTube paywalls, membership-only videos, private videos, region restrictions, or other access controls.
+- Managing, exchanging, extracting, or sharing user cookies/tokens.
+- Large parallel downloads or rate-limit circumvention.
+- Automatic upload to cloud drives or third-party storage services.
 
 ## Contributing
 
