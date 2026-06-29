@@ -80,10 +80,19 @@ jobs:
         EOF
         echo "✓ requirements.txt 格式檢查完成"
 
-    - name: 安裝測試與開發工具
+    # Python 3.8+：安裝鎖定版本的開發工具（與 pyproject 的 dev extras 一致，避免與本地漂移）
+    - name: 安裝套件與開發工具 (Python 3.8+)
+      if: matrix.python-version != '3.7'
       run: |
         python -m pip install --upgrade pip
-        pip install pytest black isort flake8
+        pip install -e ".[dev]"
+
+    # Python 3.7：dev 工具（black>=24 / flake8>=7）不支援，只裝 pytest 跑測試
+    - name: 安裝測試工具 (Python 3.7)
+      if: matrix.python-version == '3.7'
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
 
     - name: 驗證 yt_fetch 可匯入
       run: |
@@ -92,12 +101,16 @@ jobs:
     - name: 執行測試
       run: pytest -v --tb=short
 
+    # 風格檢查只在 3.8+ 執行（風格與 Python 版本無關，跑一次即可）
     - name: 風格檢查 (black)
+      if: matrix.python-version != '3.7'
       run: black --check yt_fetch.py tests/
 
     - name: 匯入排序檢查 (isort)
+      if: matrix.python-version != '3.7'
       run: isort --check-only yt_fetch.py tests/
 
     - name: 語法與靜態檢查 (flake8)
+      if: matrix.python-version != '3.7'
       run: flake8 yt_fetch.py tests/
 

@@ -7,6 +7,8 @@
 
 ## [未發布]
 
+## [1.1.0] - 2026-06-29
+
 ### 新增
 - GitHub Actions 工作流程用於自動程式碼檢查
 - Issue 和 Pull Request 模板
@@ -18,12 +20,20 @@
 - README 技術細節依賴改為 yt-dlp、imageio-ffmpeg
 - `pip install -e ".[dev]"` 可安裝 pytest；`yt-fetch` CLI 指令（`pip install -e .` 後可用）
 - pre-commit flake8 忽略 D（docstring）規則，避免雜訊
-- `filter_reason()` 純函式（抽自 `download_videos` 的 match_filter），並補上 Shorts／公開判斷、`is_public_video`、`get_downloaded_ids`、`normalize_channel_url` 的單元測試
+- 抽出可測試的純函式並補上單元測試（測試數 2 → 27）：
+  `filter_reason`、`read_archive_ids`、`archive_contains`、`find_downloaded_file`、
+  `build_channel_urls`、`filter_downloadable_entries`，並涵蓋 `is_public_video`、
+  `get_downloaded_ids`、`normalize_channel_url`
 
 ### 修正
 - `--count` 改以「該頻道」實際重疊的影片數量計算下載目標，不再被其他頻道的下載紀錄誤判為已達標而漏抓
 - Shorts 篩選不再把「時長 < 60 秒但未標記 shorts」的正常短片誤殺，改以 `/shorts/` URL 與標題/描述標記為準
+- 修正下載完成偵測中 `glob` 以 `[{id}]` 比對的 bug（中括號被當成字元類別，永遠比不到），改以結尾字串比對
 - 修正 docstring 中「ffmpeg 缺少時回退 progressive mp4」的錯誤說明（實際為必須 ffmpeg，自動安裝失敗即中止）
+
+### 變更
+- 簡化 `download_videos()`：下載成功偵測從三段冗餘邏輯收斂為「archive 已記錄或檔案存在」，並移除未使用的 `archive_before`
+- 移除頻道 URL 上已失效的 `view=0&sort=dd` query 參數（分頁本身即依最新排序）
 
 ## [1.0.0] - 2024-12-06
 
@@ -64,6 +74,7 @@
 - **次版本號**：向下相容的功能新增
 - **修訂號**：向下相容的問題修正
 
-[未發布]: https://github.com/SanHsien/yt_fetch/compare/v1.0.0...HEAD
+[未發布]: https://github.com/SanHsien/yt_fetch/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/SanHsien/yt_fetch/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SanHsien/yt_fetch/releases/tag/v1.0.0
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yt-fetch"
-version = "1.0.0"
+version = "1.1.0"
 description = "YouTube 頻道影片下載工具"
 readme = "README.md"
 requires-python = ">=3.7"

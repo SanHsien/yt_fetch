@@ -205,23 +205,27 @@ def normalize_channel_url(channel: str) -> str:
     return channel
 
 
+def read_archive_ids() -> set:
+    """讀取下載 archive（yt-dlp 格式：`youtube <id>`）中的所有影片 ID。"""
+    ids = set()
+    if not ARCHIVE_FILE.exists():
+        return ids
+    try:
+        with open(ARCHIVE_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        ids.add(parts[1])
+    except Exception as e:
+        logger.warning(f"讀取 archive 檔案時發生錯誤: {e}")
+    return ids
+
+
 def get_downloaded_ids() -> set:
     """從 archive 檔案和現有檔案中取得已下載的影片 ID"""
-    downloaded = set()
-
-    # 從 archive 檔案讀取
-    if ARCHIVE_FILE.exists():
-        try:
-            with open(ARCHIVE_FILE, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        # yt-dlp archive 格式：youtube <id>
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            downloaded.add(parts[1])
-        except Exception as e:
-            logger.warning(f"讀取 archive 檔案時發生錯誤: {e}")
+    downloaded = read_archive_ids()
 
     # 從現有檔案名稱中提取 ID
     if DOWNLOAD_DIR.exists():
@@ -232,6 +236,84 @@ def get_downloaded_ids() -> set:
                 downloaded.add(match.group(1))
 
     return downloaded
+
+
+def archive_contains(video_id: str) -> bool:
+    """檢查下載 archive 是否已記錄指定影片。"""
+    return video_id in read_archive_ids()
+
+
+def find_downloaded_file(video_id: str, tracked: Optional[str] = None) -> Optional[Path]:
+    """找出已下載影片的檔案路徑。
+
+    先採用 progress hook 記錄的檔名，找不到再用檔名中的 `[video_id]` glob。
+    """
+    if tracked:
+        tracked_path = Path(tracked)
+        if tracked_path.exists():
+            return tracked_path
+    # 注意：不可用 glob 的 f"* [{id}].mp4"，因為 [] 會被當成字元類別，
+    # 無法比對檔名中字面的中括號；改以結尾字串比對。
+    suffix = f"[{video_id}].mp4"
+    matches = [p for p in DOWNLOAD_DIR.glob("*.mp4") if p.name.endswith(suffix)]
+    return matches[0] if matches else None
+
+
+def filter_downloadable_entries(entries: List[Dict], downloaded_ids: set) -> Dict:
+    """從頻道影片清單篩出可下載的項目（排除直播/預告、非公開、已下載）。
+
+    Shorts 不在此處理，留待 yt-dlp 的 match_filter 於實際下載時過濾。
+
+    Returns:
+        dict，含 keys: entries（可下載清單）、skipped_live、skipped_public。
+    """
+    filtered: List[Dict] = []
+    skipped_live = 0
+    skipped_public = 0
+    for entry in entries:
+        video_id = entry.get("id")
+        if not video_id:
+            continue
+
+        # 排除直播與預告（只下載 VOD / 一般影片）
+        live_status = str(entry.get("live_status") or "").lower()
+        if live_status in ("is_live", "is_upcoming", "was_live"):
+            skipped_live += 1
+            logger.debug(f"跳過直播/預告影片 (live_status={live_status}): {video_id}")
+            continue
+
+        # 只下載公開影片
+        if not is_public_video(entry):
+            skipped_public += 1
+            continue
+
+        # 跳過已下載
+        if video_id in downloaded_ids:
+            logger.debug(f"跳過已下載: {video_id}")
+            continue
+
+        filtered.append(entry)
+
+    return {
+        "entries": filtered,
+        "skipped_live": skipped_live,
+        "skipped_public": skipped_public,
+    }
+
+
+def build_channel_urls(channel_url: str, include_shorts: bool) -> List[str]:
+    """根據頻道 URL 與是否包含 Shorts，組出要提取的頁面 URL 清單。
+
+    YouTube 自 2022 起把頻道分為 Videos / Shorts / Live 分頁；`/videos` 只含長片、
+    `/shorts` 只含 Shorts。若輸入已是 playlist 或已指定特定分頁，則原樣使用。
+    """
+    if "/playlist" in channel_url or "/videos" in channel_url or "/shorts" in channel_url:
+        return [channel_url]
+
+    base_url = channel_url.rstrip("/")
+    if include_shorts:
+        return [f"{base_url}/videos", f"{base_url}/shorts"]
+    return [f"{base_url}/videos"]
 
 
 def filter_reason(info_dict: Dict, include_shorts: bool) -> Optional[str]:
@@ -555,47 +637,13 @@ def download_videos(  # noqa: C901
         ydl_opts["ratelimit"] = int(ratelimit * 1024 * 1024)  # MB/s 轉 bytes/s
         logger.info(f"下載速率限制: {ratelimit} MB/s")
 
-    # 過濾 Shorts（在提取階段處理，不在 match_filter 中）
-    # match_filter 會在實際下載時才執行，我們在提取清單後手動過濾更可靠
-
     # 構建頻道 URL（根據是否包含 Shorts 決定從哪些頁面獲取）
-    # YouTube 從 2022 年起將頻道分為 Videos、Shorts、Live 三個分頁
-    # /videos 只包含長片，/shorts 只包含 Shorts
-    # 如果已經是播放清單 URL，直接使用
-    if "/playlist" in channel_url:
-        channel_urls = [channel_url]  # 保持原樣
-    elif "/videos" in channel_url or "/shorts" in channel_url:
-        # 如果已經指定了特定頁面，直接使用
-        channel_urls = [channel_url]
-    else:
-        # 根據 include_shorts 決定從哪些頁面獲取
-        base_url = channel_url.rstrip("/")
-        if base_url.endswith("/"):
-            base_url = base_url.rstrip("/")
+    # 註：/videos、/shorts 分頁本身即依最新排序，毋需附加 view/sort 等已失效的 query 參數
+    channel_urls = build_channel_urls(channel_url, include_shorts)
+    if include_shorts and len(channel_urls) > 1:
+        logger.info("將從 Videos 和 Shorts 兩個頁面獲取影片")
 
-        if include_shorts:
-            # 包含 Shorts：需要從 /videos 和 /shorts 兩個頁面獲取
-            videos_url = f"{base_url}/videos"
-            shorts_url = f"{base_url}/shorts"
-            channel_urls = [videos_url, shorts_url]
-            logger.info("將從 Videos 和 Shorts 兩個頁面獲取影片")
-        else:
-            # 不包含 Shorts：只從 /videos 頁面獲取
-            videos_url = f"{base_url}/videos"
-            channel_urls = [videos_url]
-            logger.info("將從 Videos 頁面獲取影片（不包含 Shorts）")
-
-    # 為每個 URL 添加排序參數（最新優先）
-    channel_urls_with_params = []
-    for url in channel_urls:
-        if "?" in url:
-            if "view=0" not in url and "sort=dd" not in url:
-                url += "&view=0&sort=dd"
-        else:
-            url += "?view=0&sort=dd"
-        channel_urls_with_params.append(url)
-
-    logger.info(f"開始處理頻道: {', '.join(channel_urls_with_params)}")
+    logger.info(f"開始處理頻道: {', '.join(channel_urls)}")
     logger.info(f"目標數量: {count}, 包含 Shorts: {include_shorts}, 重試次數: {retries}")
 
     downloaded_list = []
@@ -606,7 +654,7 @@ def download_videos(  # noqa: C901
             # 如果包含 Shorts，需要從多個頁面獲取並合併
             all_entries = []
 
-            for url in channel_urls_with_params:
+            for url in channel_urls:
                 logger.info(
                     f"提取頻道影片清單: {url}（限制前 {playlist_extract_count} 支以避免限流）..."
                 )
@@ -656,47 +704,14 @@ def download_videos(  # noqa: C901
 
             logger.info(f"找到 {len(entries)} 支影片，開始篩選...")
 
-            # 過濾已下載、非公開影片與直播
-            # 注意：Shorts 過濾現在由 match_filter 處理，在實際下載時會自動過濾
-            filtered_entries = []
-            skipped_public = 0
-            skipped_live = 0
-            for entry in entries:
-                video_id = entry.get("id")
-                if not video_id:
-                    continue
+            # 過濾已下載、非公開影片與直播（Shorts 由 match_filter 於下載時處理）
+            result = filter_downloadable_entries(entries, downloaded_ids)
+            entries_to_download = result["entries"]
 
-                # 排除直播與預告（只下載 VOD / 一般影片）
-                live_status = str(entry.get("live_status") or "").lower()
-                # 常見值：'not_live', 'is_live', 'is_upcoming', 'was_live'
-                if live_status in ("is_live", "is_upcoming", "was_live"):
-                    skipped_live += 1
-                    logger.debug(f"跳過直播/預告影片 (live_status={live_status}): {video_id}")
-                    continue
-
-                # 檢查是否為公開影片（優先檢查）
-                if not is_public_video(entry):
-                    skipped_public += 1
-                    continue
-
-                # 跳過已下載
-                if video_id in downloaded_ids:
-                    logger.debug(f"跳過已下載: {video_id}")
-                    continue
-
-                # Shorts 過濾現在由 match_filter 在實際下載時處理
-                # 這裡只做基本過濾，避免在提取階段就過濾掉太多
-
-                filtered_entries.append(entry)
-
-            if skipped_public > 0:
-                logger.info(f"已跳過 {skipped_public} 支非公開影片（僅下載公開影片）")
-            if skipped_live > 0:
-                logger.info(f"已跳過 {skipped_live} 支直播/預告影片（只下載 VOD）")
-
-            # 不限制數量，讓下載邏輯繼續下載直到達到目標數量
-            # 這樣即使有些影片被過濾或下載失敗，也能確保下載足夠的數量
-            entries_to_download = filtered_entries
+            if result["skipped_public"] > 0:
+                logger.info(f"已跳過 {result['skipped_public']} 支非公開影片（僅下載公開影片）")
+            if result["skipped_live"] > 0:
+                logger.info(f"已跳過 {result['skipped_live']} 支直播/預告影片（只下載 VOD）")
 
             if not entries_to_download:
                 logger.info("沒有需要下載的新影片")
@@ -733,121 +748,47 @@ def download_videos(  # noqa: C901
                     f"[{i}/{len(entries_to_download)}] 下載 ({downloaded_count}/{remaining_count} 新影片, 總計 {total_current}/{count}): {title[:60]}..."
                 )
 
+                # 清除舊的追蹤記錄後實際下載（使用 watch URL）
+                downloaded_files.pop(video_id, None)
                 try:
-                    # 記錄下載前的 archive 狀態
-                    archive_before = set()
-                    if ARCHIVE_FILE.exists():
-                        try:
-                            with open(ARCHIVE_FILE, "r", encoding="utf-8") as f:
-                                for line in f:
-                                    line = line.strip()
-                                    if line and not line.startswith("#"):
-                                        parts = line.split()
-                                        if len(parts) >= 2:
-                                            archive_before.add(parts[1])
-                        except Exception:
-                            pass
-
-                    # 清除該影片的追蹤記錄（如果有的話）
-                    if video_id in downloaded_files:
-                        del downloaded_files[video_id]
-
-                    # 實際下載（使用 watch URL）
                     ydl.download([video_url])
-
-                    # 檢查下載是否成功：檢查 archive 是否更新或檔案是否存在
-                    download_success = False
-
-                    # 方法1：檢查 archive 是否包含此影片
-                    if ARCHIVE_FILE.exists():
-                        try:
-                            with open(ARCHIVE_FILE, "r", encoding="utf-8") as f:
-                                for line in f:
-                                    line = line.strip()
-                                    if line and not line.startswith("#"):
-                                        parts = line.split()
-                                        if len(parts) >= 2 and parts[1] == video_id:
-                                            download_success = True
-                                            break
-                        except Exception:
-                            pass
-
-                    # 方法2：檢查 progress hook 是否記錄了檔案
-                    if not download_success:
-                        file_path = downloaded_files.get(video_id)
-                        if file_path and Path(file_path).exists():
-                            download_success = True
-
-                    # 方法3：檢查檔案系統是否有此影片
-                    if not download_success:
-                        pattern = f"* [{video_id}].mp4"
-                        files = list(DOWNLOAD_DIR.glob(pattern))
-                        if files:
-                            file_path = str(files[0])
-                            download_success = True
-
-                    if download_success:
-                        # 確定檔案路徑
-                        file_path_obj = None
-                        if video_id in downloaded_files:
-                            file_path_obj = Path(downloaded_files[video_id])
-                        else:
-                            pattern = f"* [{video_id}].mp4"
-                            files = list(DOWNLOAD_DIR.glob(pattern))
-                            if files:
-                                file_path_obj = files[0]
-
-                        if file_path_obj and file_path_obj.exists():
-                            duration = entry.get("duration", 0)
-                            downloaded_list.append(
-                                {
-                                    "title": title,
-                                    "id": video_id,
-                                    "path": str(file_path_obj),
-                                    "duration": duration,
-                                }
-                            )
-                            downloaded_count += 1
-                            total_current = existing_count + downloaded_count
-                            logger.info(
-                                f"✓ 完成 ({downloaded_count}/{remaining_count} 新影片, 總計 {total_current}/{count}): {file_path_obj.name}"
-                            )
-
-                            # 檢查是否已達到目標數量，立即停止
-                            if downloaded_count >= remaining_count:
-                                logger.info(
-                                    f"已達到目標下載數量 {count} 支（原有 {existing_count} 支 + 新下載 {downloaded_count} 支），停止下載"
-                                )
-                                break
-                        else:
-                            # 下載成功但找不到檔案（不應該發生）
-                            logger.warning(f"下載成功但找不到檔案: {video_id}")
-                            # 仍然計入成功（因為 archive 已記錄）
-                            downloaded_count += 1
-                            if downloaded_count >= remaining_count:
-                                total_current = existing_count + downloaded_count
-                                logger.info(
-                                    f"已達到目標下載數量 {count} 支（原有 {existing_count} 支 + 新下載 {downloaded_count} 支），停止下載"
-                                )
-                                break
-                    else:
-                        # 下載失敗或被過濾（例如 Shorts）
-                        logger.warning(f"下載失敗或被過濾: {video_id} ({title[:60]})")
-                        # 不計入成功，繼續下載下一個
-
-                    # 如果設定了 sleep，在下載之間延遲
-                    if (
-                        sleep_seconds > 0
-                        and downloaded_count < count
-                        and i < len(entries_to_download)
-                    ):
-                        logger.debug(f"等待 {sleep_seconds} 秒以避免限流...")
-                        time.sleep(sleep_seconds)
-
                 except Exception as e:
                     logger.error(f"下載失敗 {video_id}: {e}")
-                    # 不計入成功，繼續下載下一個
                     continue
+
+                # 判斷是否成功：archive 已記錄、或檔案已存在皆視為成功
+                file_path_obj = find_downloaded_file(video_id, downloaded_files.get(video_id))
+                if not (archive_contains(video_id) or file_path_obj):
+                    # 下載失敗或被 match_filter 過濾（例如 Shorts）
+                    logger.warning(f"下載失敗或被過濾: {video_id} ({title[:60]})")
+                    continue
+
+                downloaded_count += 1
+                downloaded_list.append(
+                    {
+                        "title": title,
+                        "id": video_id,
+                        "path": str(file_path_obj) if file_path_obj else "",
+                        "duration": entry.get("duration", 0),
+                    }
+                )
+                total_current = existing_count + downloaded_count
+                done_name = file_path_obj.name if file_path_obj else video_id
+                logger.info(
+                    f"✓ 完成 ({downloaded_count}/{remaining_count} 新影片, 總計 {total_current}/{count}): {done_name}"
+                )
+
+                # 已達到目標數量，立即停止
+                if downloaded_count >= remaining_count:
+                    logger.info(
+                        f"已達到目標下載數量 {count} 支（原有 {existing_count} 支 + 新下載 {downloaded_count} 支），停止下載"
+                    )
+                    break
+
+                # 如果設定了 sleep，在下載之間延遲
+                if sleep_seconds > 0 and i < len(entries_to_download):
+                    logger.debug(f"等待 {sleep_seconds} 秒以避免限流...")
+                    time.sleep(sleep_seconds)
 
     except yt_dlp.utils.DownloadError as e:
         error_msg = str(e)
