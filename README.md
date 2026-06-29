@@ -205,7 +205,7 @@ python yt_fetch.py --channel "@channel_handle" --count 10 --include-shorts --ret
 - 使用 yt-dlp 的 download archive（`download/.download_archive.txt`）
 - 檢查檔案名稱中的影片 ID
 
-如果影片已存在，腳本會跳過並顯示「沒有需要下載的新影片」。
+`--count` 以「該頻道」為單位計算：腳本會比對本頻道已下載的影片數量，只補足還缺的部分；不會因為其他頻道已下載的影片而少抓。如果本頻道目標數量已滿足，會顯示「已達到本頻道目標數量」並結束。
 
 ## ffmpeg 安裝（必需）
 

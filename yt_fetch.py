@@ -11,7 +11,7 @@ YouTube 頻道影片下載工具
 3. 腳本會自動建立 .venv 並安裝所需套件
 
 【常見錯誤與處理】
-- "ffmpeg not found": 安裝 ffmpeg 或腳本會嘗試回退到 progressive mp4
+- "ffmpeg not found": 腳本會嘗試以 imageio-ffmpeg 自動安裝；若仍失敗則中止，請手動安裝 ffmpeg
 - "No videos found": 檢查頻道 URL 是否正確，或嘗試使用 @handle 格式
 - "Network error": 檢查網路連線，或使用 --retries 增加重試次數
 - "Permission denied": 確保有寫入 download/ 資料夾的權限
@@ -234,6 +234,39 @@ def get_downloaded_ids() -> set:
     return downloaded
 
 
+def filter_reason(info_dict: Dict, include_shorts: bool) -> Optional[str]:
+    """判斷影片是否應被排除（供 yt-dlp 的 match_filter 使用）。
+
+    Args:
+        info_dict: yt-dlp 提供的影片資訊字典
+        include_shorts: 是否包含 Shorts
+
+    Returns:
+        排除原因字串；若應接受該影片則回傳 None。
+    """
+    # 排除非公開影片
+    availability = info_dict.get("availability")
+    if availability and availability != "public":
+        return "非公開影片"
+
+    if not include_shorts:
+        # 以 URL 是否包含 /shorts/ 為主要判斷依據
+        url = info_dict.get("url", "") or info_dict.get("webpage_url", "")
+        if "/shorts/" in str(url).lower():
+            return "Shorts 影片（URL 包含 /shorts/）"
+
+        # 時長 < 60 秒且標題/描述含 "shorts" 才視為 Shorts，
+        # 避免誤殺合法的短篇一般影片。
+        duration = info_dict.get("duration")
+        if duration and duration < 60:
+            title = str(info_dict.get("title", "")).lower()
+            description = str(info_dict.get("description", "")).lower()
+            if "shorts" in title or "shorts" in description:
+                return f"Shorts 影片（時長 {duration} 秒且標題/描述包含 shorts）"
+
+    return None
+
+
 def is_public_video(entry: Dict) -> bool:
     """
     檢查影片是否為公開影片
@@ -422,20 +455,11 @@ def download_videos(  # noqa: C901
     # 確保下載目錄存在
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 取得已下載的 ID
+    # 取得已下載的 ID（全域；用於下載時跳過已存在的影片）
+    # 注意：existing_count / remaining_count 會在取得「本頻道」影片清單後再計算，
+    # 以本頻道實際重疊的影片數量為準，避免被其他頻道的下載紀錄干擾。
     downloaded_ids = get_downloaded_ids()
-    existing_count = len(downloaded_ids)
-    logger.info(f"資料夾內已有 {existing_count} 支影片（從 archive 和檔案名稱判斷）")
-
-    # 計算需要下載的數量（目標數量 - 已存在的數量）
-    # 如果已存在的數量 >= 目標數量，則不需要下載
-    remaining_count = max(0, count - existing_count)
-
-    if remaining_count == 0:
-        logger.info(f"已達到目標數量 {count} 支（已有 {existing_count} 支），無需下載新影片")
-        return []
-
-    logger.info(f"目標下載 {count} 支，已有 {existing_count} 支，還需下載 {remaining_count} 支")
+    logger.info(f"資料夾內已有 {len(downloaded_ids)} 支影片（從 archive 和檔案名稱判斷）")
 
     # 檢查 ffmpeg（必須），如果沒有則嘗試自動安裝
     ffmpeg_path = None
@@ -480,40 +504,14 @@ def download_videos(  # noqa: C901
                 downloaded_files[video_id] = filename
                 logger.debug(f"記錄下載檔案: {video_id} -> {filename}")
 
-    # 建立 match_filter 來過濾 Shorts（預設排除）
+    # 建立 match_filter 來過濾 Shorts（預設排除），實際判斷委派給 filter_reason
     def match_filter(info_dict):
-        """過濾影片的 match_filter 函數
-        返回 None 表示接受，返回字符串表示拒絕
-        """
-        # 檢查是否為公開影片
-        availability = info_dict.get("availability")
-        if availability and availability != "public":
-            return "非公開影片"
-
-        # 如果不需要包含 Shorts，過濾掉 Shorts
-        if not include_shorts:
-            # 檢查 URL 是否包含 /shorts/
-            url = info_dict.get("url", "") or info_dict.get("webpage_url", "")
-            if "/shorts/" in str(url).lower():
-                return "Shorts 影片（URL 包含 /shorts/）"
-
-            # 檢查時長（Shorts 通常 < 60 秒）
-            duration = info_dict.get("duration")
-            if duration and duration is not None and duration < 60:
-                # 額外檢查標題或描述是否包含 "shorts"
-                title = str(info_dict.get("title", "")).lower()
-                description = str(info_dict.get("description", "")).lower()
-                if "shorts" in title or "shorts" in description:
-                    return f"Shorts 影片（時長 {duration} 秒且標題/描述包含 shorts）"
-                # 如果時長 < 60 秒但沒有明確標記為 shorts，也過濾掉（保守策略，避免誤下載 Shorts）
-                return f"Shorts 影片（時長 {duration} 秒，預設排除）"
-
-        return None  # 返回 None 表示接受此影片
+        return filter_reason(info_dict, include_shorts)
 
     # 計算需要提取的影片數量（比目標數量更多，以備過濾）
     # 考慮到可能有大量不符合條件的影片（會員影片、非公開、Shorts等）
-    # 使用「需新下載數量 * 5」與 50 取最小值，避免提取過多又確保有足夠候選
-    playlist_extract_count = min(remaining_count * 5, 50) if remaining_count > 0 else 0
+    # 使用「目標數量 * 5」與 50 取最小值，避免提取過多又確保有足夠候選
+    playlist_extract_count = min(count * 5, 50)
 
     ydl_opts = {
         "format": format_str,
@@ -642,6 +640,18 @@ def download_videos(  # noqa: C901
 
             if not entries:
                 logger.warning("頻道中沒有找到影片")
+                return []
+
+            # 以「本頻道」實際重疊的影片數量計算下載目標，
+            # 避免被其他頻道的下載紀錄影響（--count 是本頻道的最新 N 支）。
+            existing_count = sum(1 for e in entries if e.get("id") in downloaded_ids)
+            remaining_count = max(0, count - existing_count)
+            logger.info(
+                f"本頻道已下載 {existing_count} 支，目標 {count} 支，還需下載 {remaining_count} 支"
+            )
+
+            if remaining_count == 0:
+                logger.info(f"已達到本頻道目標數量 {count} 支，無需下載新影片")
                 return []
 
             logger.info(f"找到 {len(entries)} 支影片，開始篩選...")
