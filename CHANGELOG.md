@@ -18,6 +18,12 @@
 - README 技術細節依賴改為 yt-dlp、imageio-ffmpeg
 - `pip install -e ".[dev]"` 可安裝 pytest；`yt-fetch` CLI 指令（`pip install -e .` 後可用）
 - pre-commit flake8 忽略 D（docstring）規則，避免雜訊
+- `filter_reason()` 純函式（抽自 `download_videos` 的 match_filter），並補上 Shorts／公開判斷、`is_public_video`、`get_downloaded_ids`、`normalize_channel_url` 的單元測試
+
+### 修正
+- `--count` 改以「該頻道」實際重疊的影片數量計算下載目標，不再被其他頻道的下載紀錄誤判為已達標而漏抓
+- Shorts 篩選不再把「時長 < 60 秒但未標記 shorts」的正常短片誤殺，改以 `/shorts/` URL 與標題/描述標記為準
+- 修正 docstring 中「ffmpeg 缺少時回退 progressive mp4」的錯誤說明（實際為必須 ffmpeg，自動安裝失敗即中止）
 
 ## [1.0.0] - 2024-12-06
 

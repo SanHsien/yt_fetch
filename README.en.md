@@ -206,7 +206,7 @@ The script records downloaded videos automatically. Running it again will not do
 - Uses yt-dlp's download archive: `download/.download_archive.txt`
 - Checks video IDs in existing filenames.
 
-If the video already exists, the script skips it and reports that there are no new videos to download.
+`--count` is counted per channel: the script compares how many of that channel's videos are already downloaded and only fetches the remainder, so videos already downloaded from other channels do not reduce the count. If the channel's target is already met, it reports that the target has been reached and exits.
 
 ## ffmpeg Installation (Required)
 

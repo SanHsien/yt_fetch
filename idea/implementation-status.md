@@ -35,7 +35,7 @@
 | 自動記錄已下載的影片（使用 yt-dlp archive） | ✅ | ✅ 已完成 | `ydl_opts['download_archive']` (531), `get_downloaded_ids()` (211-237) | 使用 `.download_archive.txt` |
 | 檢查檔案名稱中的影片 ID | ✅ | ✅ 已完成 | `get_downloaded_ids()` (229-235) | 正則表達式提取 `[id].mp4` |
 | 重複執行不會重複下載 | ✅ | ✅ 已完成 | `download_videos()` (674-676) | 檢查 `downloaded_ids` |
-| 計算已存在影片數量，只下載還需要的數量 | ✅ | ✅ 已完成 | `download_videos()` (427-439) | `remaining_count = max(0, count - existing_count)` |
+| 計算已存在影片數量，只下載還需要的數量 | ✅ | ✅ 已完成 | `download_videos()` | `existing_count` 以本頻道實際重疊的影片數量計算，`remaining_count = max(0, count - existing_count)` |
 
 **狀態：✅ 全部完成**
 
@@ -95,7 +95,7 @@
 
 | 功能項目 | Spec 要求 | 實作狀態 | 程式碼位置 | 備註 |
 |---------|----------|---------|-----------|------|
-| 根據需新下載數量動態調整提取數量（remaining_count * 5，上限 50） | ⭐ | ✅ 已完成 | `download_videos()` (514-517) | `min(remaining_count * 5, 50)` |
+| 根據目標數量動態調整提取數量（count * 5，上限 50） | ⭐ | ✅ 已完成 | `download_videos()` | `min(count * 5, 50)`（本頻道重疊數量需先取得清單才能得知，故以 count 估算提取量） |
 | 多頁面提取和合併（Videos + Shorts） | ⭐ | ✅ 已完成 | `download_videos()` (612-627) | 從多個 URL 提取並合併 |
 | 自動去重（根據 video_id） | ⭐ | ✅ 已完成 | `download_videos()` (633-640) | 使用 `seen_ids` set 去重 |
 
