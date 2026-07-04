@@ -1,0 +1,4 @@
+# 執行期依賴。權威來源為 pyproject.toml 的 [project].dependencies；
+# 修改依賴時請兩處同步（或改用 `pip install -e .` 由 pyproject 安裝）。
+yt-dlp>=2026.6.9
+imageio-ffmpeg>=0.6.0

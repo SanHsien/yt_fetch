@@ -1,0 +1,27 @@
+[flake8]
+# 最大行長度
+max-line-length = 100
+
+# 忽略的錯誤代碼
+# E203: whitespace before ':' (與 black 衝突)
+# W503: line break before binary operator (與 black 衝突)
+# E501: line too long (由 max-line-length 控制)
+ignore = E203, W503, E501
+
+# 排除的目錄和檔案
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    *.egg-info,
+    download
+
+# 每行的最大複雜度
+max-complexity = 15
+
+# 統計資訊
+statistics = True
+

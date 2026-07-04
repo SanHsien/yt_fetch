@@ -1,0 +1,75 @@
+name: 建置 Windows EXE
+
+on:
+  push:
+    tags:
+      - 'v*'          # 推送 v* 標籤時建置並發佈到 Releases
+  workflow_dispatch:  # 也可手動觸發（僅產生 artifact，不發佈 Release）
+
+permissions:
+  contents: write     # 發佈 Release 需要
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+
+    steps:
+      - name: 檢出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: 安裝建置相依
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[build]"
+
+      - name: 建置 exe
+        run: python build_exe.py
+
+      - name: 決定版本字串
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/*') {
+            $v = $env:GITHUB_REF -replace 'refs/tags/', ''
+          } else {
+            $v = "dev-$($env:GITHUB_SHA.Substring(0,7))"
+          }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: 打包 zip 與 sha256
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.ver.outputs.version }}"
+          $zip = "yt_fetch-$ver-windows-x64.zip"
+          Compress-Archive -Path dist/yt_fetch.exe -DestinationPath $zip -Force
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  $zip" | Out-File -FilePath "$zip.sha256" -Encoding ascii
+          "artifact=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        id: pack
+
+      - name: 上傳 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt_fetch-windows-x64
+          path: |
+            ${{ steps.pack.outputs.artifact }}
+            ${{ steps.pack.outputs.artifact }}.sha256
+
+      - name: 發佈到 Release（僅標籤觸發）
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.pack.outputs.artifact }}
+            ${{ steps.pack.outputs.artifact }}.sha256
+          generate_release_notes: true

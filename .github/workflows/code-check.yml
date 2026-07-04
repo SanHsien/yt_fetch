@@ -1,0 +1,170 @@
+name: 程式碼檢查
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # 允許手動觸發
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 最低支援版本（yt-dlp 2026.x 已要求 Python 3.10+）
+          - os: ubuntu-latest
+            python-version: '3.10'
+          # 測試最新穩定版本
+          - os: ubuntu-latest
+            python-version: '3.11'
+          # 測試最新版本
+          - os: ubuntu-latest
+            python-version: '3.12'
+          # 跨平台驗證（Windows / macOS）
+          - os: windows-latest
+            python-version: '3.12'
+          - os: macos-latest
+            python-version: '3.12'
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    # 強制 UTF-8 stdout/stderr：Windows 預設 cp1252 會讓含 ✓ / 中文的 print 拋 UnicodeEncodeError
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+
+    # 統一用 bash，讓 test -f / heredoc 等步驟在 Windows runner（Git Bash）也能運作
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: 設定 Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: 檢查 Python 版本
+      run: |
+        python --version
+        python -c "import sys; assert sys.version_info >= (3, 10), f'需要 Python 3.10+，當前版本: {sys.version}'"
+    
+    - name: 檢查語法
+      run: |
+        python -m py_compile yt_fetch.py
+        python -m py_compile yt_fetch_gui.py
+        python -m py_compile chrome_cdp_cookies.py
+        python -m py_compile build_exe.py
+        python -m py_compile tools/generate_readme_screenshot.py
+        python -m py_compile tools/check_dependency_freshness.py
+        echo "✓ 語法檢查通過"
+    
+    - name: 檢查檔案結構
+      run: |
+        test -f yt_fetch.py || (echo "錯誤: 找不到 yt_fetch.py" && exit 1)
+        test -f requirements.txt || (echo "錯誤: 找不到 requirements.txt" && exit 1)
+        test -f README.md || (echo "錯誤: 找不到 README.md" && exit 1)
+        test -d tests || (echo "錯誤: 找不到 tests/" && exit 1)
+        echo "✓ 檔案結構檢查通過"
+    
+    - name: 驗證 requirements.txt 格式
+      run: |
+        python << 'EOF'
+        import re
+        import sys
+        
+        try:
+            with open('requirements.txt', 'r', encoding='utf-8') as f:
+                lines = [l.strip() for l in f if l.strip() and not l.startswith('#')]
+                has_error = False
+                for line in lines:
+                    # 移除註解和額外選項
+                    clean_line = line.split(';')[0].split('[')[0].strip()
+                    # 支援標準的 pip 格式：package, package==version, package>=version 等
+                    if not re.match(r'^[a-zA-Z0-9_.-]+(?:[><=!]+[0-9.]+(?:\.\w+)?)?$', clean_line):
+                        print(f'警告: 可能無效的依賴格式: {line}')
+                        has_error = True
+                if not has_error:
+                    print('✓ requirements.txt 格式檢查通過')
+        except Exception as e:
+            print(f'錯誤: 無法讀取 requirements.txt: {e}')
+            sys.exit(1)
+        EOF
+        echo "✓ requirements.txt 格式檢查完成"
+
+    - name: 安裝套件與開發工具
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: 驗證 yt_fetch 可匯入
+      run: |
+        python -c "import sys; sys.path.insert(0, '.'); import yt_fetch; print('yt_fetch OK')"
+
+    - name: CLI --help smoke（不應連網或建立 venv）
+      run: python yt_fetch.py --help
+
+    - name: yt-fetch console script smoke
+      run: yt-fetch --help
+
+    - name: 執行測試
+      run: pytest -v --tb=short
+
+    # 最低 Python 版本相容性檢查（在新版 Python 上靜態偵測，避免用到 3.11+ 才有的語法
+    # 卻在 requires-python>=3.10 下於舊版炸掉）。
+    - name: 最低版本相容性檢查 (vermin <= Python 3.10)
+      run: |
+        pip install vermin
+        python << 'EOF'
+        import re
+        import subprocess
+        import sys
+
+        cmd = [
+            "vermin",
+            "--eval-annotations",
+            "--no-tips",
+            "yt_fetch.py",
+            "yt_fetch_gui.py",
+            "chrome_cdp_cookies.py",
+            "build_exe.py",
+            "tests/",
+            "tools/",
+        ]
+        result = subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print(result.stdout)
+        match = re.search(r"Minimum required versions:\s*(.+)", result.stdout)
+        if not match:
+            print("錯誤: 無法解析 vermin 最低版本輸出")
+            sys.exit(1)
+        py3_versions = []
+        for token in re.split(r"[,\s]+", match.group(1).strip()):
+            if token.startswith("3."):
+                major, minor = token.split(".", 1)
+                py3_versions.append((int(major), int(minor)))
+        if not py3_versions:
+            print("錯誤: vermin 未回報 Python 3 相容版本")
+            sys.exit(1)
+        required = max(py3_versions)
+        if required > (3, 10):
+            print(f"錯誤: 需要 Python {required[0]}.{required[1]}，高於專案宣告的 Python 3.10+")
+            sys.exit(1)
+        print("OK: Python 3.10 相容性檢查通過")
+        EOF
+
+    - name: 風格檢查 (black)
+      run: black --check yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
+
+    - name: 匯入排序檢查 (isort)
+      run: isort --check-only yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
+
+    - name: 語法與靜態檢查 (flake8)
+      run: flake8 yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
+
