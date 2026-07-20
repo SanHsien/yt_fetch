@@ -45,6 +45,7 @@
 - 使用繁體中文回覆與撰寫使用者文件。
 - 對使用條款、著作權、cookies、速率限制相關修改要保守。
 - 不提交 `download/` 內的影片、cookies、log、虛擬環境或本機暫存檔。
+- **修 bug 必回註 `REPO_REVIEW.md`（適用所有 AI agent：Claude、Codex、Gemini 等，維護者 2026-07-19 指示，常態慣例）**：每修復 `REPO_REVIEW.md` 列出的問題，須回到對應項目標註修復 commit hash 與日期；修復過程中額外發現並修掉的 bug 也要補註。review 維持 latest-only，但修復狀態必須跟上現況。
 
 ## 常用指令
 
