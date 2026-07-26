@@ -104,7 +104,8 @@ git push origin vX.Y.Z
 CodeQL，並在實際合併前再次確認 head SHA、政策 Check 與標籤未被撤銷。Repository 的
 Actions 預設 token 仍維持 read-only；
 只對這兩個 workflow 宣告最小寫入權限，另須開啟
-`can_approve_pull_request_reviews=true`。
+`can_approve_pull_request_reviews=true`。同一 PR 的 Gate 使用 concurrency group 序列化，
+避免 CI 與 CodeQL 同時完成時重複核准。
 
 ## PyPI 發布可行性評估
 
