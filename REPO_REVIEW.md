@@ -1,28 +1,45 @@
 # 專案覆核與建議
 
 覆核日期：2026-07-26（Asia/Taipei）
-覆核基準：`main` / GitHub `origin/main` `fcccb99860a2266474bb8db48808abdb4d245343`
+覆核基準：`main` `cafb8c6`（文件提交前；遠端同步狀態於推送後重驗）
 
 ## 結論
 
-專案的核心分層、測試與 Release 流程清楚，最新程式碼檢查也成功；但尚不應把目前狀態視為
-可放心重發 Release。兩項 P1 會讓實作偏離「僅處理 YouTube 且保留使用者既有授權」的邊界，
-而 Windows EXE 的下載核心已落後 PyPI。應先補測試並最小修正，再進行使用者主持的實機下載驗收。
+專案的核心分層、測試與 Release 流程清楚；本輪已補齊下載產物隔離、CLI 數值防呆與可重跑的
+Release ZIP 驗證。但尚不應把目前狀態視為可放心重發 Release：兩項 P1 仍會讓實作偏離
+「僅處理 YouTube 且保留使用者既有授權」的邊界，而 Windows EXE 的下載核心已落後 PyPI。
+應先補測試並最小修正，再進行使用者主持的實機下載驗收。
 
 ## 本次已驗證
 
-- `HEAD`、`origin/main` 與 GitHub branch ref 均為 `fcccb99`；工作開始時工作樹乾淨。
-- `pytest -q`：**102 passed**；Black、isort、flake8、`py_compile`、`pip check` 與 CLI `--help` 通過。
+- 工作開始時 `HEAD == origin/main == 784bf16` 且工作樹乾淨；推送後同步狀態另於交付前重驗。
+- `pytest -q`：**115 passed**；Black、isort、flake8、`py_compile`、vermin（最低需求 3.8）
+  與 CLI `--help` 通過。
 - GitHub 最新「程式碼檢查」（2026-07-20，`fcccb99`）成功。
 - `v1.9.1` Release ZIP 已下載到暫存驗證：SHA-256 為
   `f7398cff51369258b7cab9d9e631d87865fd9ddb5327cf454bd299649cf1fb2c`，Windows
-  `Expand-Archive` 成功，且僅找到一個 `yt_fetch.exe`。
+  `Expand-Archive` 成功；新增驗證器也確認 CRC 正常，且 ZIP 僅含根目錄下一個非空的
+  `yt_fetch.exe`（55,523,515 bytes）。
 - 以既有本機 EXE 進行無帳號 GUI smoke：主視窗、說明／語言選單可開啟，關閉後無殘留視窗。
   未執行剛下載的 EXE、登入或真實下載；這些需要使用者當輪授權。
 - Dependabot open alerts 為 0。GitHub Code Scanning API 回報尚無分析結果；Secret Scanning API
   因本機 GitHub token 缺少 `admin:repo_hook` scope 無法驗證，不能宣稱其為零。
 - 本輪已新增 [`docs/COMPUTER_USE_VALIDATION.md`](docs/COMPUTER_USE_VALIDATION.md)，並同步
   `DEVELOPMENT`、`RELEASING`、`HANDOFF`、`AGENTS` 與 `CLAUDE` 的驗收入口。
+
+## 本輪已修正
+
+- **下載產物隔離不完整**：原 `.gitignore` 只排除 `download/` 根目錄下少數影音副檔名，
+  實際的 `download/<頻道名稱>/` 影片、字幕與報告可能被誤提交。已改為排除整個
+  `download/`，並加入巢狀輸出回歸測試。修復：`cafb8c6`（2026-07-26）。
+- **Release 驗證可能誤用舊暫存內容**：原驗收指令重用固定目錄並允許覆寫，且未獨立驗證
+  CRC 與 ZIP 版面。已改用每次唯一目錄，新增 `tools/verify_release_zip.py` 及危險路徑、
+  CRC、唯一根目錄 EXE、非空內容測試，並對 `v1.9.1` 資產實跑。修復：`cafb8c6`
+  （2026-07-26）。
+- **CLI 接受無效執行參數**：`--retries` 可為 0／負數，`--ratelimit` 與 `--sleep` 可為
+  負數。現在由 argparse 明確拒絕，並加入四個回歸案例。修復：`cafb8c6`（2026-07-26）。
+- **桌面驗收基線少一項 CI gate**：實機文件未列 vermin，且 `py_compile` 不含新驗證工具。
+  已與 CI／開發文件同步。修復：`cafb8c6`（2026-07-26）。
 
 ## 未解決問題
 
