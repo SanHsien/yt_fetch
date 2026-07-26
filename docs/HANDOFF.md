@@ -27,7 +27,7 @@
 - ✅ 設定檔 `yt_fetch.ini`（configparser）：優先序 CLI > 環境變數 > ini > 內建；**不保存 cookies**。
 - ✅ 多頻道批次下載 `--channels-file`（單一失敗不中斷整批）＋結果報表。
 - ✅ 可測化：抽出 `build_channel_urls`、`filter_downloadable_entries`、`find_downloaded_file`、
-  `filter_reason`、`is_non_public` 等純函式；目前測試數為 148。
+  `filter_reason`、`is_non_public` 等純函式；目前測試數為 149。
 - ✅ UX：`--help` 乾淨輸出、env 數字防呆、Ctrl+C 乾淨退出、cookies 安全提醒。
 - ✅ 跨平台 CI（Ubuntu/Windows/macOS）＋ console script、`--help` smoke 與 Python CodeQL。
 - ✅ 正確性修正：`--count` 以頻道計、Shorts 不誤殺正常短片、下載偵測 glob bug。
@@ -54,8 +54,8 @@
   補上 CodeQL 與新版 Release Actions。
 - ✅ 發版後維護：每週 Dependabot 涵蓋全部 Python 直接依賴與 GitHub Actions；每月 EXE
   關鍵依賴檢查改比對 repo 宣告基線，查詢失敗不再誤報 `OK`。
-- ✅ Dependabot PR 自動判斷：低風險 patch／minor 更新在五平台 CI 與 CodeQL 通過後自動
-  核准、squash merge；重大版本、執行期依賴與異常變更範圍保留人工 Gate。
+- ✅ Dependabot PR 自動判斷：CI 直接覆蓋的低風險 patch／minor 更新在五平台 CI 與 CodeQL
+  通過後自動核准、squash merge；重大版本、執行期、發布／打包依賴與異常範圍保留人工 Gate。
 
 當前版本：`1.9.2`（pyproject、__version__ 與 CHANGELOG 同步；`v1.9.2` GitHub Release
 已發布，正式 Windows ZIP 的 checksum、CRC、壓縮結構與解壓均已驗證）。

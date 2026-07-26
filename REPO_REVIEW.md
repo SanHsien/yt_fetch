@@ -70,13 +70,13 @@ PyPI 查詢失敗也會標為需要注意。另比照其他專案新增每週 De
 
 ### P2：Dependabot 只開 PR，沒有自動風險判斷與核准
 
-現在會先依套件生態系、依賴類型、semver 幅度與變更檔案範圍分類；只有低風險結果能取得
+現在會先依套件生態系、依賴名稱、依賴類型、semver 幅度與變更檔案範圍分類；只有低風險結果能取得
 綁定 head SHA 的成功政策 Check。合併 workflow 另要求五平台 CI、CodeQL、Dependabot 作者、
-`main` base 與相同 head SHA 全部成立，才提交核准並 squash merge。重大版本、執行期依賴
-與無法確認的情況一律保留人工審查。
+`main` base 與相同 head SHA 全部成立，才提交核准並 squash merge。重大版本、執行期依賴、
+未被必要 CI 直接覆蓋的發布／打包工具與無法確認的情況一律保留人工審查。
 
-- 修復：`bb30378`（2026-07-26）
-- 回歸：七種風險矩陣情境與 workflow 權限、作者、政策 Check、必要 checks、換頭保護
+- 修復：`bb30378`、`b72f3ba`、`b26770f`（2026-07-26）
+- 回歸：八種風險矩陣情境與 workflow 權限、作者、政策 Check、必要 checks、換頭保護
 
 ### 其他本輪修正
 
@@ -101,7 +101,7 @@ PyPI 查詢失敗也會標為需要注意。另比照其他專案新增每週 De
 
 | 類別 | 結果 | 證據 |
 | --- | --- | --- |
-| pytest | PASS | 148 passed |
+| pytest | PASS | 149 passed |
 | black / isort / flake8 | PASS | 全部通過 |
 | py_compile / vermin / CLI help | PASS | vermin 最低需求 3.8，低於專案 3.10 基線 |
 | 依賴新鮮度 | PASS | 手動觸發 run `30193431045`；`yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新，無多餘 issue |

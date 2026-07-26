@@ -14,9 +14,10 @@
 ### 維護
 - 新增每週 Dependabot 檢查，涵蓋 Python 執行期／開發／建置依賴及 GitHub Actions。
 - 依賴新鮮度報告會寫入 Actions Job Summary，依賴恢復最新時自動關閉既有提醒 issue。
-- 新增 Dependabot 風險判斷與守門合併：低風險開發／建置或 Actions patch、minor 更新，僅在
+- 新增 Dependabot 風險判斷與守門合併：CI 直接覆蓋的低風險開發工具或 Actions patch、minor 更新，僅在
   五平台 CI 與 CodeQL 全數通過後自動核准並 squash merge；重大版本、執行期依賴、未知
-  metadata 或超出預期檔案範圍仍須人工審查。
+  metadata、發布／打包工具或超出預期檔案範圍仍須人工審查。
+- 合併前再次讀取最新標籤與政策 Check，允許維護者在 workflow 已啟動後撤銷自動合併。
 
 ## [1.9.2] - 2026-07-26
 

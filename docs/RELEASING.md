@@ -93,14 +93,16 @@ git push origin vX.Y.Z
 
 | 更新 | 決策 |
 | --- | --- |
-| Python 直接開發／建置依賴，patch 或 minor，且只改 `pyproject.toml`／`requirements.txt` | 五平台 CI 與 CodeQL 通過後自動核准、squash merge |
+| CI 直接執行的 `black`、`flake8`、`isort`、`pytest`、`vermin`，patch 或 minor，且只改依賴 manifest | 五平台 CI 與 CodeQL 通過後自動核准、squash merge |
 | GitHub Actions，patch 或 minor，且只改 `.github/workflows/*.yml`／`*.yaml` | 五平台 CI 與 CodeQL 通過後自動核准、squash merge |
 | Python 執行期依賴（含 `yt-dlp`、`imageio-ffmpeg`） | 人工審查，必要時重跑下載／EXE 驗證 |
+| `pyinstaller`、`setuptools`、`wheel`、`pre-commit` 等未被必要 CI 直接覆蓋的發布／打包工具 | 人工審查，必要時重跑安裝或 EXE build |
 | major、未知 metadata、間接依賴或超出預期檔案範圍 | 人工審查 |
 
 自動合併不只信任標籤：`dependabot-merge.yml` 還會驗證同一 head SHA 上由
 `github-actions` 建立的成功政策 Check、PR 作者與 base branch、五個 CI matrix jobs、
-CodeQL，以及合併當下 head SHA 未改變。Repository 的 Actions 預設 token 仍維持 read-only；
+CodeQL，並在實際合併前再次確認 head SHA、政策 Check 與標籤未被撤銷。Repository 的
+Actions 預設 token 仍維持 read-only；
 只對這兩個 workflow 宣告最小寫入權限，另須開啟
 `can_approve_pull_request_reviews=true`。
 
