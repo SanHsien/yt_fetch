@@ -41,17 +41,24 @@ jobs:
       - name: 確認身分、標籤與完整 checks
         id: gate
         run: |
-          for attempt in {1..6}; do
-            pr_json="$(gh pr view "$PR_NUMBER" \
-              --json author,baseRefName,headRefOid,labels,mergeable,mergeStateStatus,reviewDecision,state,url)"
-            mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
-            [[ "$mergeable" != "UNKNOWN" ]] && break
-            sleep 5
-          done
-
+          pr_json="$(gh pr view "$PR_NUMBER" \
+            --json author,baseRefName,headRefOid,labels,mergeable,mergeStateStatus,reviewDecision,state,url)"
           author="$(jq -r '.author.login' <<< "$pr_json")"
           base="$(jq -r '.baseRefName' <<< "$pr_json")"
           state="$(jq -r '.state' <<< "$pr_json")"
+          if [[ "$author" != "app/dependabot" || "$base" != "main" || "$state" != "OPEN" ]]; then
+            echo "非開啟中的 main Dependabot PR，停止。"
+            exit 0
+          fi
+
+          for attempt in {1..6}; do
+            mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
+            [[ "$mergeable" != "UNKNOWN" ]] && break
+            sleep 5
+            pr_json="$(gh pr view "$PR_NUMBER" \
+              --json author,baseRefName,headRefOid,labels,mergeable,mergeStateStatus,reviewDecision,state,url)"
+          done
+
           head_sha="$(jq -r '.headRefOid' <<< "$pr_json")"
           mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
           merge_state="$(jq -r '.mergeStateStatus' <<< "$pr_json")"
@@ -60,10 +67,6 @@ jobs:
             jq -r '[.labels[].name == "dependencies-rebase-requested"] | any' <<< "$pr_json"
           )"
 
-          if [[ "$author" != "app/dependabot" || "$base" != "main" || "$state" != "OPEN" ]]; then
-            echo "非開啟中的 main Dependabot PR，停止。"
-            exit 0
-          fi
           if [[ "$auto_label" != "true" ]]; then
             echo "沒有低風險自動合併標籤，停止。"
             exit 0
