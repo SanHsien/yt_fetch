@@ -108,6 +108,14 @@ def render_markdown(rows: List[Dict[str, object]]) -> str:
             "",
             "若 `yt-dlp` 落後，Windows EXE 可能因 YouTube 改版而下載失敗。",
             "建議確認測試後切新版 tag，讓 release workflow 重新打包 EXE。",
+            "",
+            "## 處理流程",
+            "",
+            "1. 檢查同批 Dependabot PR 的政策分類、變更範圍與必要 checks。",
+            "2. 低風險開發／建置工具與 Actions 更新由 guarded merge workflow 序列核准；",
+            "   執行期依賴、發布工具與 Actions major 保留人工審查。",
+            "3. 每次自動或人工合併後重新執行本檢查；只有追蹤依賴皆為最新且沒有 open",
+            "   Dependabot PR 才關閉本 issue。",
         ]
     )
     return "\n".join(lines) + "\n"

@@ -89,3 +89,5 @@ def test_render_markdown_includes_rebuild_hint():
     assert "yt-dlp" in report
     assert "需要維護" in report
     assert "重新打包 EXE" in report
+    assert "## 處理流程" in report
+    assert "每次自動或人工合併後重新執行本檢查" in report

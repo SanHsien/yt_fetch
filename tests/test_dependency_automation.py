@@ -30,6 +30,7 @@ def test_dependabot_review_and_merge_workflows_keep_strict_guards():
     assert "tools/classify_dependabot_update.py" in review
     assert "Dependabot policy" in review
     assert "workflow_run:" in merge
+    assert "actions: write" in merge
     assert "group: dependabot-merge-" in merge
     assert "cancel-in-progress: false" in merge
     assert "GH_REPO: ${{ github.repository }}" in merge
@@ -41,3 +42,23 @@ def test_dependabot_review_and_merge_workflows_keep_strict_guards():
     assert "--match-head-commit" in merge
     assert "check (windows-latest, 3.12)" in merge
     assert "Python security scan" in merge
+    assert "gh workflow run dependency-freshness.yml" in merge
+
+
+def test_freshness_workflow_owns_and_resolves_one_maintenance_issue():
+    workflow = (ROOT / ".github" / "workflows" / "dependency-freshness.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "gh label create dependencies" in workflow
+    assert "group: dependency-freshness" in workflow
+    assert "cancel-in-progress: true" in workflow
+    assert "pyproject.toml" in workflow
+    assert "--author app/dependabot" in workflow
+    assert "--state all" in workflow
+    assert 'gh issue reopen "$issue"' in workflow
+    assert 'checked_sha="$(git rev-parse HEAD)"' in workflow
+    assert '--add-assignee "$GITHUB_REPOSITORY_OWNER"' in workflow
+    assert "--add-label dependencies" in workflow
+    assert 'gh issue edit "$issue" --body-file' in workflow
+    assert 'gh issue close "$issue"' in workflow

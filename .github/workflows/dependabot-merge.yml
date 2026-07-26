@@ -12,6 +12,7 @@ on:
         type: number
 
 permissions:
+  actions: write
   contents: write
   issues: write
   pull-requests: write
@@ -171,3 +172,7 @@ jobs:
           merged_json="$(gh pr view "$PR_NUMBER" --json state,closedAt)"
           test "$(jq -r '.state' <<< "$merged_json")" = "MERGED"
           test "$(jq -r '.closedAt // empty' <<< "$merged_json")" != ""
+
+      - name: 合併後重新驗證維護 issue
+        if: steps.gate.outputs.ready == 'true'
+        run: gh workflow run dependency-freshness.yml --ref main

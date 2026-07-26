@@ -20,6 +20,9 @@
   Actions major、未知 metadata 或超出預期檔案範圍仍須人工審查。
 - 合併前再次讀取最新標籤與政策 Check，允許維護者在 workflow 已啟動後撤銷自動合併。
 - CodeQL／CI 完成事件會以全域依賴 PR queue 序列化處理，避免重複核准與 manifest 衝突。
+- 自動與人工依賴 PR 合併後都會立即重跑 freshness；維護 issue 改為固定 reopen／更新內容、
+  指派 repo owner 並列出 open Dependabot PR，透過 concurrency 與最新 main SHA 防止舊結果
+  覆寫；追蹤依賴恢復最新且沒有 open PR 才關閉。
 
 ## [1.9.2] - 2026-07-26
 

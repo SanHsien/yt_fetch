@@ -81,9 +81,14 @@ git push origin vX.Y.Z
   - 所有依賴 PR 共用同一條合併序列；落後或衝突時自動要求 Dependabot rebase，並在新
     head 上重跑整套檢查。
   - 通過後 squash merge；GitHub 同步把 PR 標為 `MERGED`／關閉，workflow 再刪除遠端分支。
+  - 自動合併後 explicit dispatch dependency freshness；人工合併由 manifest 的 `main` push
+    觸發，讓維護 issue 跟上最新 `main`。
 - 每月 EXE 關鍵依賴排程：`.github/workflows/dependency-freshness.yml`
   - 比較 `pyproject.toml` 宣告的 `yt-dlp`／`imageio-ffmpeg` 基線與 PyPI 最新版。
-  - 落後或查詢失敗時建立／更新同一個 issue；恢復最新時自動關閉提醒。
+  - 落後、查詢失敗或仍有 open Dependabot PR 時建立或 reopen／更新、指派同一個 issue；
+    追蹤依賴恢復最新且沒有 open PR 時自動關閉提醒。
+  - Issue 內含人工與自動合併的處理步驟，不只充當單次通知。
+  - Runs 以 concurrency 取消舊結果，寫 issue 前再確認 checkout 仍是最新 `main`。
   - 報告會顯示於該次 GitHub Actions Job Summary。
 - 本地檢查：
   ```bash
@@ -114,6 +119,8 @@ Actions 預設 token 仍維持 read-only；
 `can_approve_pull_request_reviews=true`。全部 Dependabot PR 共用全域 concurrency group，
 既避免 CI 與 CodeQL 同時完成時重複核准，也避免多個 manifest PR 同時落地造成衝突。
 被政策保留的 PR 不會自動核准或關閉；只有成功合併才會關閉。
+自動合併後會以 `workflow_dispatch` 重跑 dependency freshness；人工合併由 manifest
+push 觸發。只有追蹤依賴恢復最新且沒有 open Dependabot PR 才關閉維護 issue。
 
 ## PyPI 發布可行性評估
 
