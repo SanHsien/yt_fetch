@@ -92,6 +92,16 @@ pre-commit #12 與 pytest #13：五平台 CI／CodeQL 全綠，乾淨 Python 3.1
 squash merge、關閉並刪除分支；#12、#13 也實際驗證同檔衝突後 rebase 再重跑 checks 的
 序列流程。PyInstaller 仍須以 Windows EXE build 驗證，不納入一般自動核准。
 
+後續閉環覆核發現，原流程只有 guarded auto-merge 會處理 PR，卻沒有可靠維護 freshness
+issue：dispatch 缺 `actions: write`，人工合併 runtime dependency 不會立即重驗，並行 runs
+也可能建立重複或過期 issue。現在自動合併以 explicit dispatch、人工 manifest 合併以
+`main` push 重驗；freshness 使用單一 concurrency、確認最新 main SHA、列出 open Dependabot
+PR，並固定 reopen／更新、指派同一 tracker。追蹤依賴最新且沒有 open PR 才關閉。
+
+- 修復：`3ed4cc9`（2026-07-26）
+- 回歸：dispatch 權限、label bootstrap、人工合併 trigger、concurrency、stale SHA 防護、
+  fixed tracker reopen 與 open PR close gate
+
 ### 其他本輪修正
 
 - `download/`、CLI 數值邊界、Release ZIP 驗證與桌面驗收基線：`cafb8c6`
