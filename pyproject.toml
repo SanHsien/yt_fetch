@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=83.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -32,16 +32,16 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black>=24.0.0",
-    "flake8>=7.0.0",
-    "isort>=5.13.0",
-    "pre-commit>=3.5.0",
-    "pytest>=7.0.0",
+    "black>=26.5.1",
+    "flake8>=7.3.0",
+    "isort>=8.0.1",
+    "pre-commit>=4.6.1",
+    "pytest>=9.1.1",
     # 最低 Python 版本相容性檢查（避免用到 3.11+ 才有的語法卻宣稱支援 3.10）
-    "vermin>=1.6.0",
+    "vermin>=1.8.0",
 ]
 build = [
-    "pyinstaller>=6.0",
+    "pyinstaller>=6.21.0",
 ]
 
 [project.scripts]
