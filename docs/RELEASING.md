@@ -69,14 +69,21 @@ git push origin vX.Y.Z
 ## 依賴新鮮度檢查
 
 `yt-dlp` 與 YouTube 行為高度耦合；Windows EXE 會固定打包建置當下版本，因此即使程式碼未變，
-也可能需要重發 Release。
+也可能需要重發 Release。維護分成兩層：
 
-- 每月排程：`.github/workflows/dependency-freshness.yml`
+- 每週 Dependabot：`.github/dependabot.yml`
+  - `pip`：全部 Python 執行期、開發與建置依賴；以 `increase` 策略推進 `>=` 最低版本。
+  - `github-actions`：所有 workflow 使用的 Actions。
+- 每月 EXE 關鍵依賴排程：`.github/workflows/dependency-freshness.yml`
+  - 比較 `pyproject.toml` 宣告的 `yt-dlp`／`imageio-ffmpeg` 基線與 PyPI 最新版。
+  - 落後或查詢失敗時建立／更新同一個 issue；恢復最新時自動關閉提醒。
+  - 報告會顯示於該次 GitHub Actions Job Summary。
 - 本地檢查：
   ```bash
   python tools/check_dependency_freshness.py
   ```
-- 若檢查結果顯示 `yt-dlp` 或 `imageio-ffmpeg` 落後，先本地測試，再切新版 tag 觸發 EXE/Release。
+- Dependabot PR 或月報顯示依賴落後時，先確認 changelog／相容性並跑完整測試；只有需要讓
+  Windows 使用者取得新內建版本時，才推進 patch 版本並切 tag 重發 EXE。
 
 ## PyPI 發布可行性評估
 

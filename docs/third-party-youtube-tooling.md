@@ -14,7 +14,10 @@
 
 - `yt-dlp` 是最容易因 YouTube 改版而過期的依賴；若 EXE 下載開始失敗，先檢查內嵌 yt-dlp 是否落後 PyPI。
 - GUI「檢查更新」會同時檢查 GitHub Release 與 PyPI 最新 `yt-dlp`。
-- 每月排程 `.github/workflows/dependency-freshness.yml` 會檢查 `yt-dlp` 與 `imageio-ffmpeg`，落後時建立或更新維護 issue。
+- 每月排程 `.github/workflows/dependency-freshness.yml` 會比較 repo 宣告的 `yt-dlp` 與
+  `imageio-ffmpeg` 基線；落後或查詢失敗時建立／更新維護 issue，恢復最新時自動關閉。
+- 每週 Dependabot 另檢查全部 Python 直接依賴及 GitHub Actions，避免開發、建置與 CI 工具
+  被兩個 EXE 關鍵依賴以外的範圍漏掉。
 - 本地可執行 `python tools/check_dependency_freshness.py` 產生 Markdown 報告。
 
 ## cookies 使用邊界

@@ -52,7 +52,8 @@
 - 支援 `--channels-file` 多頻道循序批次下載，單一頻道失敗不會中斷整批。
 - 支援 `yt_fetch.ini` 記住常用設定；優先序為 CLI > 環境變數 > ini > 內建預設。
 - 支援速率限制、下載間隔、重試次數與環境變數設定。
-- 依賴新鮮度 workflow 每月檢查 `yt-dlp` / `imageio-ffmpeg` 是否落後。
+- 依賴新鮮度 workflow 每月比較 repo 宣告的 `yt-dlp` / `imageio-ffmpeg` 基線與 PyPI；
+  Dependabot 每週檢查全部 Python 直接依賴與 GitHub Actions。
 - README 中英文、CHANGELOG、發行流程文件與接手文件已建立。
 
 ### 測試與品質

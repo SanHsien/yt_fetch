@@ -11,7 +11,9 @@
 | `chrome_cdp_cookies.py` | 受控瀏覽器登入與 CDP cookies 擷取（CDP 限本機 loopback、只匯出 YouTube 登入所需網域；Windows） |
 | `yt_fetch.spec` / `build_exe.py` | PyInstaller 打包設定與一鍵建置腳本（產出 `dist/yt_fetch.exe`） |
 | `tools/generate_readme_screenshot.py` | 產生 README 用的 GUI 截圖 |
-| `tools/check_dependency_freshness.py` | 檢查 `yt-dlp` / `imageio-ffmpeg` 是否落後 PyPI（供每月排程與本地使用） |
+| `tools/check_dependency_freshness.py` | 比較 repo 宣告的 `yt-dlp` / `imageio-ffmpeg` 基線與 PyPI（供每月排程與本地使用） |
+| `.github/dependabot.yml` | 每週檢查 Python 執行期／開發／建置依賴與 GitHub Actions |
+| `.github/workflows/dependency-freshness.yml` | 每月產生 EXE 關鍵依賴報告，需注意時維護同一個 issue |
 | `.github/workflows/release.yml` | 在 Windows 上自動建置 exe 並於 `v*` 標籤發佈 Release |
 | `tests/` | 基本 smoke test、關鍵 helper 與 GUI 純邏輯測試 |
 | `README.md` | 使用者操作說明 |

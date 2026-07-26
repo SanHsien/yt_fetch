@@ -58,6 +58,16 @@ Scanning open alerts 都是 0。
 - `v1.9.2` 發行 commit CodeQL run：`30192819270`
 - `v1.9.2` 發行 commit 程式碼檢查 run：`30192819296`
 
+### P2：依賴新鮮度排程可能長期誤報 `OK`
+
+原流程先以無上限的 `>=` 規格安裝依賴，再把剛安裝的版本與 PyPI 最新版相比，通常會得到
+相同版本，無法偵測 repo 的版本基線已落後。現在改為直接讀取 `pyproject.toml` 宣告基線；
+PyPI 查詢失敗也會標為需要注意。另比照其他專案新增每週 Dependabot，補齊全部 Python
+直接依賴、建置工具與 GitHub Actions。
+
+- 修復：`b3a9117`（2026-07-26）
+- 回歸：宣告基線解析、套件名稱正規化、落後判斷、查詢失敗與 Dependabot 排程設定
+
 ### 其他本輪修正
 
 - `download/`、CLI 數值邊界、Release ZIP 驗證與桌面驗收基線：`cafb8c6`
@@ -81,7 +91,7 @@ Scanning open alerts 都是 0。
 
 | 類別 | 結果 | 證據 |
 | --- | --- | --- |
-| pytest | PASS | 136 passed |
+| pytest | PASS | 140 passed |
 | black / isort / flake8 | PASS | 全部通過 |
 | py_compile / vermin / CLI help | PASS | vermin 最低需求 3.8，低於專案 3.10 基線 |
 | 依賴新鮮度 | PASS | `yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新 |

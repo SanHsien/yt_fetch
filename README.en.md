@@ -4,6 +4,7 @@
 
 [![Code Check](https://github.com/SanHsien/yt_fetch/actions/workflows/code-check.yml/badge.svg?branch=main)](https://github.com/SanHsien/yt_fetch/actions/workflows/code-check.yml)
 [![CodeQL](https://github.com/SanHsien/yt_fetch/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/SanHsien/yt_fetch/actions/workflows/codeql.yml)
+[![Dependency freshness](https://github.com/SanHsien/yt_fetch/actions/workflows/dependency-freshness.yml/badge.svg)](https://github.com/SanHsien/yt_fetch/actions/workflows/dependency-freshness.yml)
 [![Release](https://img.shields.io/github/v/release/SanHsien/yt_fetch?sort=semver&display_name=tag)](https://github.com/SanHsien/yt_fetch/releases)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#)
@@ -539,7 +540,7 @@ Use `--include-shorts` if you want Shorts. Livestreams are never downloaded.
 - **Error-diagnosis maintenance rule**: when real yt-dlp, cookie, ffmpeg, disk-permission, rate-limit, or entitlement errors appear, add them to the core classifier and message table so CLI and GUI benefit together.
 - **GUI maintenance rule**: the current feature set is enough; UI changes should only improve quick setup, clear status, or obvious next actions. Prefer layout density, wording, cookies/ffmpeg/batch status, and result presentation cleanup over more settings panels.
 - **Batch principle**: keep batch downloads sequential and conservative to avoid unnecessary rate limiting or service pressure.
-- **Release maintenance**: cut a new tag and rebuild the EXE only when dependency freshness, real download issues, or core fixes make a new user-facing build worthwhile. The monthly dependency freshness workflow checks `yt-dlp` and `imageio-ffmpeg`; each Release should list the bundled `yt-dlp` version, main changes, known limitations, and SHA256.
+- **Release maintenance**: cut a new tag and rebuild the EXE only when dependency freshness, real download issues, or core fixes make a new user-facing build worthwhile. The monthly dependency freshness workflow compares the repository's declared `yt-dlp` / `imageio-ffmpeg` baselines with PyPI, while weekly Dependabot checks every direct Python dependency and GitHub Action. Each Release should list the bundled `yt-dlp` version, main changes, known limitations, and SHA256.
 - **Optional but not urgent**: format conversion can be evaluated when there is a clear need. MP4 remains the default to avoid extra ffmpeg failure modes and GUI complexity.
 
 ### Not Planned
