@@ -67,6 +67,38 @@ def test_normalize_channel_url_videos_shorts_playlist_passthrough():
         assert normalize_channel_url(url) == url
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://youtube.com/@example/videos",
+        "https://m.youtube.com/@example/videos",
+        "https://music.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx",
+        "https://youtu.be/abcdefghijk",
+    ],
+)
+def test_normalize_channel_url_accepts_https_youtube_hosts(url):
+    from yt_fetch import normalize_channel_url
+
+    assert normalize_channel_url(url) == url
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://www.youtube.com/@example/videos",
+        "https://example.com/channel/demo",
+        "https://youtube.com.example/@demo",
+        "https://user:pass@youtube.com/@demo",
+        "https://youtube.com:8443/@demo",
+    ],
+)
+def test_normalize_channel_url_rejects_untrusted_urls(url):
+    from yt_fetch import normalize_channel_url
+
+    with pytest.raises(ValueError, match="YouTube"):
+        normalize_channel_url(url)
+
+
 def test_parse_cookies_from_browser_spec():
     from yt_fetch import parse_cookies_from_browser_spec
 
@@ -291,6 +323,24 @@ def test_is_public_video_rejects_non_public():
     assert not is_public_video(
         {"id": "abc12345678", "title": "t", "availability": "subscriber_only"}
     )
+
+
+@pytest.mark.parametrize("availability", ["subscriber_only", "premium_only", "needs_auth"])
+def test_is_public_video_accepts_entitled_content_only_with_cookies(availability):
+    from yt_fetch import is_public_video
+
+    entry = {"id": "abc12345678", "title": "t", "availability": availability}
+
+    assert not is_public_video(entry)
+    assert is_public_video(entry, allow_entitled=True)
+
+
+def test_is_public_video_rejects_private_even_with_cookies():
+    from yt_fetch import is_public_video
+
+    entry = {"id": "abc12345678", "title": "t", "availability": "private"}
+
+    assert not is_public_video(entry, allow_entitled=True)
 
 
 def test_is_public_video_rejects_empty_and_missing_title():
@@ -716,6 +766,17 @@ def test_filter_reason_rejects_non_public():
     assert filter_reason(info, include_shorts=True) == "非公開影片"
 
 
+def test_filter_reason_allows_entitled_content_only_with_cookies():
+    from yt_fetch import filter_reason
+
+    member = {"id": "abc", "title": "member", "availability": "subscriber_only"}
+    private = {"id": "def", "title": "private", "availability": "private"}
+
+    assert filter_reason(member, include_shorts=True) == "非公開影片"
+    assert filter_reason(member, include_shorts=True, allow_entitled=True) is None
+    assert filter_reason(private, include_shorts=True, allow_entitled=True) == "非公開影片"
+
+
 def test_advanced_filter_reason():
     from yt_fetch import advanced_filter_reason
 
@@ -741,6 +802,17 @@ def test_build_match_filter_keeps_advanced_filters_when_including_shorts():
 
     assert match_filter({"title": "Rust Talk", "duration": 600}) is not None
     assert match_filter({"title": "Python Talk", "duration": 600}) is None
+
+
+def test_build_match_filter_defers_entitlement_to_youtube_when_cookies_exist():
+    from yt_fetch import build_match_filter
+
+    match_filter = build_match_filter(include_shorts=True, allow_entitled=True)
+
+    assert match_filter({"id": "abc", "title": "member", "availability": "subscriber_only"}) is None
+    assert (
+        match_filter({"id": "def", "title": "private", "availability": "private"}) == "非公開影片"
+    )
 
 
 # --- get_downloaded_ids ---
@@ -891,6 +963,25 @@ def test_filter_downloadable_entries_excludes_live_nonpublic_downloaded():
     assert result["skipped_advanced"] == 0
 
 
+def test_filter_downloadable_entries_keeps_entitled_candidates_only_with_cookies():
+    from yt_fetch import filter_downloadable_entries
+
+    entries = [
+        {"id": "aaaaaaaaaaa", "title": "member", "availability": "subscriber_only"},
+        {"id": "bbbbbbbbbbb", "title": "private", "availability": "private"},
+    ]
+
+    without_cookies = filter_downloadable_entries(entries, downloaded_ids=set())
+    with_cookies = filter_downloadable_entries(
+        entries,
+        downloaded_ids=set(),
+        allow_entitled=True,
+    )
+
+    assert without_cookies["entries"] == []
+    assert [entry["id"] for entry in with_cookies["entries"]] == ["aaaaaaaaaaa"]
+
+
 def test_filter_downloadable_entries_applies_title_filters_only_at_list_stage():
     from yt_fetch import filter_downloadable_entries
 
@@ -971,6 +1062,24 @@ def test_prepare_entries_to_download_filters_and_counts():
     assert [entry["id"] for entry in result["entries_to_download"]] == ["aaaaaaaaaaa"]
     assert result["existing_count"] == 1
     assert result["remaining_count"] == 2
+
+
+def test_prepare_entries_to_download_keeps_authorized_member_candidate():
+    from yt_fetch import prepare_entries_to_download
+
+    entries = [
+        {"id": "aaaaaaaaaaa", "title": "member", "availability": "subscriber_only"},
+        {"id": "bbbbbbbbbbb", "title": "private", "availability": "private"},
+    ]
+
+    result = prepare_entries_to_download(
+        entries,
+        downloaded_ids=set(),
+        count=1,
+        allow_entitled=True,
+    )
+
+    assert [entry["id"] for entry in result["entries_to_download"]] == ["aaaaaaaaaaa"]
 
 
 def test_calculate_playlist_extract_count_bounds():
@@ -1491,5 +1600,83 @@ def test_download_videos_falls_back_to_no_cookies_on_cookie_error(monkeypatch, t
     # 第一次嘗試帶 cookies，fallback 後（含下載階段）不帶 cookies
     assert "cookiesfrombrowser" in seen_opts[0]
     assert "cookiesfrombrowser" not in seen_opts[-1]
+    assert (
+        seen_opts[-1]["match_filter"](
+            {"id": "member00001", "title": "member", "availability": "subscriber_only"}
+        )
+        == "非公開影片"
+    )
     # 有提示改用無 cookies 模式
     assert "改用" in caplog.text
+
+
+def test_download_videos_defers_member_entitlement_to_youtube_with_cookies(monkeypatch, tmp_path):
+    """有合法 cookies 時保留會員候選，實際存取權由 yt-dlp／YouTube 驗證。"""
+    import yt_fetch
+
+    download_dir = tmp_path / "download"
+    archive = download_dir / ".download_archive.txt"
+    video_id = "member00001"
+    seen_opts = []
+
+    monkeypatch.setattr(yt_fetch, "DOWNLOAD_DIR", download_dir)
+    monkeypatch.setattr(yt_fetch, "ARCHIVE_FILE", archive)
+    monkeypatch.setattr(yt_fetch, "check_ffmpeg", lambda: True)
+
+    class FakeDownloadError(Exception):
+        pass
+
+    class FakeYoutubeDL:
+        def __init__(self, opts):
+            self.opts = dict(opts)
+            seen_opts.append(self.opts)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def extract_info(self, url, download=False):
+            return {
+                "entries": [
+                    {
+                        "id": video_id,
+                        "title": "Authorized Member Video",
+                        "availability": "subscriber_only",
+                        "webpage_url": f"https://www.youtube.com/watch?v={video_id}",
+                    }
+                ]
+            }
+
+        def download(self, urls):
+            candidate = {
+                "id": video_id,
+                "title": "Authorized Member Video",
+                "availability": "subscriber_only",
+            }
+            assert self.opts["cookiefile"] == "cookies.txt"
+            assert self.opts["match_filter"](candidate) is None
+            download_dir.mkdir(parents=True, exist_ok=True)
+            (download_dir / f"Authorized Member Video [{video_id}].mp4").write_text(
+                "",
+                encoding="utf-8",
+            )
+            archive.write_text(f"youtube {video_id}\n", encoding="utf-8")
+
+    fake_yt_dlp = types.SimpleNamespace(
+        YoutubeDL=FakeYoutubeDL,
+        utils=types.SimpleNamespace(DownloadError=FakeDownloadError),
+    )
+    monkeypatch.setitem(sys.modules, "yt_dlp", fake_yt_dlp)
+
+    downloaded = yt_fetch.download_videos(
+        "https://www.youtube.com/@fake/videos",
+        count=1,
+        include_shorts=False,
+        retries=1,
+        cookies_file="cookies.txt",
+    )
+
+    assert [item["id"] for item in downloaded] == [video_id]
+    assert all(opts["cookiefile"] == "cookies.txt" for opts in seen_opts)

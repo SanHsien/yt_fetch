@@ -31,6 +31,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
+from urllib.parse import urlparse
 
 # 確保 stdout/stderr 為 UTF-8，避免 Windows 預設 cp1252 在輸出中文／✓ 時拋 UnicodeEncodeError
 for _stream in (sys.stdout, sys.stderr):
@@ -71,6 +72,7 @@ QUALITY_HEIGHTS = {
     "480p": 480,
 }
 DATE_FILTER_RE = re.compile(r"^\d{8}$")
+ENTITLED_AVAILABILITIES = {"subscriber_only", "premium_only", "needs_auth"}
 ERROR_DIAGNOSIS_PATTERNS = (
     ("cookies", ("cookie",)),
     ("entitlement", ("private", "members", "membership", "unavailable", "forbidden")),
@@ -660,11 +662,28 @@ def install_ffmpeg() -> Optional[str]:
 
 
 def normalize_channel_url(channel: str) -> str:
-    """正規化頻道 URL/ID/handle"""
+    """正規化頻道 URL/ID/handle，並拒絕非 HTTPS YouTube 網址。"""
     channel = channel.strip()
+    if not channel:
+        raise ValueError("YouTube 頻道不可為空")
 
-    # 如果已經是完整 URL
-    if channel.startswith("http"):
+    if "://" in channel:
+        parsed = urlparse(channel)
+        host = (parsed.hostname or "").lower()
+        is_youtube_host = host == "youtube.com" or host.endswith(".youtube.com")
+        is_short_host = host == "youtu.be"
+        try:
+            port = parsed.port
+        except ValueError as exc:
+            raise ValueError("YouTube 網址的連接埠格式無效") from exc
+        if (
+            parsed.scheme.lower() != "https"
+            or not (is_youtube_host or is_short_host)
+            or parsed.username
+            or parsed.password
+            or port not in (None, 443)
+        ):
+            raise ValueError("只接受 HTTPS 的 YouTube 網址")
         return channel
 
     # 如果是 @handle 格式
@@ -679,7 +698,7 @@ def normalize_channel_url(channel: str) -> str:
     if not channel.startswith("/"):
         return f"https://www.youtube.com/@{channel}/videos"
 
-    return channel
+    return f"https://www.youtube.com{channel}"
 
 
 def read_archive_ids() -> set:
@@ -751,10 +770,12 @@ def filter_downloadable_entries(
     date_before: str = "",
     min_duration: int = 0,
     max_duration: int = 0,
+    allow_entitled: bool = False,
 ) -> Dict:
-    """從頻道影片清單篩出可下載的項目（排除直播/預告、非公開、已下載）。
+    """從頻道影片清單篩出候選項目（排除直播、無權內容與已下載）。
 
     Shorts 不在此處理，留待 yt-dlp 的 match_filter 於實際下載時過濾。
+    有 cookies 時保留會員／Premium／需登入候選，由 YouTube 實際驗證帳號權限。
 
     Returns:
         dict，含 keys: entries（可下載清單）、skipped_live、skipped_public。
@@ -777,8 +798,7 @@ def filter_downloadable_entries(
             logger.debug(f"跳過直播/預告影片 (live_status={live_status}): {video_id}")
             continue
 
-        # 只下載公開影片
-        if not is_public_video(entry):
+        if not is_public_video(entry, allow_entitled=allow_entitled):
             skipped_public += 1
             continue
 
@@ -1040,16 +1060,24 @@ def _extract_entries(
         return _extract(ydl_opts, allow_fallback=False)
 
 
-def is_non_public(info: Dict) -> bool:
+def is_non_public(info: Dict, allow_entitled: bool = False) -> bool:
     """依 `availability` 欄位判斷影片是否明確標記為非公開。
 
     沒有 availability 欄位時回傳 False（交由其他啟發式判斷）。
     """
-    availability = info.get("availability")
-    return bool(availability) and availability != "public"
+    availability = str(info.get("availability") or "").lower()
+    if not availability or availability == "public":
+        return False
+    if allow_entitled and availability in ENTITLED_AVAILABILITIES:
+        return False
+    return True
 
 
-def filter_reason(info_dict: Dict, include_shorts: bool) -> Optional[str]:
+def filter_reason(
+    info_dict: Dict,
+    include_shorts: bool,
+    allow_entitled: bool = False,
+) -> Optional[str]:
     """判斷影片是否應被排除（供 yt-dlp 的 match_filter 使用）。
 
     Args:
@@ -1063,7 +1091,7 @@ def filter_reason(info_dict: Dict, include_shorts: bool) -> Optional[str]:
         return "直播/預告影片（只下載一般 VOD）"
 
     # 排除非公開影片
-    if is_non_public(info_dict):
+    if is_non_public(info_dict, allow_entitled=allow_entitled):
         return "非公開影片"
 
     if not include_shorts:
@@ -1126,7 +1154,7 @@ def advanced_filter_reason(
     return None
 
 
-def is_public_video(entry: Dict) -> bool:
+def is_public_video(entry: Dict, allow_entitled: bool = False) -> bool:
     """
     檢查影片是否為公開影片
 
@@ -1134,15 +1162,14 @@ def is_public_video(entry: Dict) -> bool:
         entry: yt-dlp 提取的影片資訊字典
 
     Returns:
-        True 如果影片是公開的，False 否則
+        True 如果影片公開，或在提供 cookies 時屬可由 YouTube 驗證的已授權候選
     """
     if not entry:
         return False
 
     video_id = entry.get("id", "unknown")
 
-    # 檢查 availability 欄位（最可靠的判斷方式）：只接受 'public'
-    if is_non_public(entry):
+    if is_non_public(entry, allow_entitled=allow_entitled):
         logger.debug(f"跳過非公開影片 (availability={entry.get('availability')}): {video_id}")
         return False
 
@@ -1573,6 +1600,7 @@ def build_match_filter(
     date_before: str = "",
     min_duration: int = 0,
     max_duration: int = 0,
+    allow_entitled: bool = False,
 ) -> Callable[[Dict], Optional[str]]:
     """建立 yt-dlp match_filter。"""
     date_after = normalize_date_filter(date_after, "--date-after")
@@ -1583,7 +1611,11 @@ def build_match_filter(
         raise ValueError("--min-duration 不可大於 --max-duration")
 
     def match_filter(info_dict: Dict) -> Optional[str]:
-        return filter_reason(info_dict, include_shorts) or advanced_filter_reason(
+        return filter_reason(
+            info_dict,
+            include_shorts,
+            allow_entitled=allow_entitled,
+        ) or advanced_filter_reason(
             info_dict,
             title_include,
             title_exclude,
@@ -1678,6 +1710,7 @@ def prepare_entries_to_download(
     date_before: str = "",
     min_duration: int = 0,
     max_duration: int = 0,
+    allow_entitled: bool = False,
 ) -> Dict[str, object]:
     """整理提取結果，回傳可下載候選與目標數資訊。"""
     if not all_entries:
@@ -1733,6 +1766,7 @@ def prepare_entries_to_download(
         date_before,
         min_duration,
         max_duration,
+        allow_entitled,
     )
     entries_to_download = result["entries"]
 
@@ -1802,6 +1836,7 @@ def download_videos(  # noqa: C901
     try:
         date_after = normalize_date_filter(date_after, "--date-after")
         date_before = normalize_date_filter(date_before, "--date-before")
+        allow_entitled = bool(cookies_from_browser or cookies_file)
         match_filter = build_match_filter(
             include_shorts,
             title_include,
@@ -1810,6 +1845,7 @@ def download_videos(  # noqa: C901
             date_before,
             min_duration,
             max_duration,
+            allow_entitled,
         )
     except ValueError as e:
         logger.error(str(e))
@@ -1884,6 +1920,21 @@ def download_videos(  # noqa: C901
         cookies_file,
     )
 
+    # cookies 載入失敗時提取流程會移除 cookies；此時也要立即恢復成只接受公開內容，
+    # 避免把需要授權的候選交給無登入的下載階段。
+    allow_entitled = bool(ydl_opts.get("cookiesfrombrowser") or ydl_opts.get("cookiefile"))
+    match_filter = build_match_filter(
+        include_shorts,
+        title_include,
+        title_exclude,
+        date_after,
+        date_before,
+        min_duration,
+        max_duration,
+        allow_entitled,
+    )
+    ydl_opts["match_filter"] = match_filter
+
     candidate_plan = prepare_entries_to_download(
         all_entries,
         downloaded_ids,
@@ -1894,6 +1945,7 @@ def download_videos(  # noqa: C901
         date_before,
         min_duration,
         max_duration,
+        allow_entitled,
     )
     entries_to_download = candidate_plan["entries_to_download"]
     existing_count = candidate_plan["existing_count"]
@@ -2177,7 +2229,11 @@ def main():  # noqa: C901
         sys.exit(0)
 
     # 單一頻道
-    channel_url = normalize_channel_url(args.channel)
+    try:
+        channel_url = normalize_channel_url(args.channel)
+    except ValueError as e:
+        logger.error(str(e))
+        sys.exit(2)
     logger.info(f"頻道: {channel_url}")
     downloaded_list = download_videos(
         channel_url,
