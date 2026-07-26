@@ -13,10 +13,12 @@ on:
 
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 
 concurrency:
-  group: dependabot-merge-${{ github.event.workflow_run.pull_requests[0].number || inputs.pr_number }}
+  # 所有依賴 PR 共用一條合併序列，避免同時改 pyproject.toml 時互相衝突。
+  group: dependabot-merge-queue
   cancel-in-progress: false
 
 jobs:
@@ -39,14 +41,24 @@ jobs:
       - name: 確認身分、標籤與完整 checks
         id: gate
         run: |
-          pr_json="$(gh pr view "$PR_NUMBER" \
-            --json author,baseRefName,headRefOid,labels,reviewDecision,state,url)"
+          for attempt in {1..6}; do
+            pr_json="$(gh pr view "$PR_NUMBER" \
+              --json author,baseRefName,headRefOid,labels,mergeable,mergeStateStatus,reviewDecision,state,url)"
+            mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
+            [[ "$mergeable" != "UNKNOWN" ]] && break
+            sleep 5
+          done
 
           author="$(jq -r '.author.login' <<< "$pr_json")"
           base="$(jq -r '.baseRefName' <<< "$pr_json")"
           state="$(jq -r '.state' <<< "$pr_json")"
           head_sha="$(jq -r '.headRefOid' <<< "$pr_json")"
+          mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
+          merge_state="$(jq -r '.mergeStateStatus' <<< "$pr_json")"
           auto_label="$(jq -r '[.labels[].name == "dependencies-auto-merge"] | any' <<< "$pr_json")"
+          rebase_requested="$(
+            jq -r '[.labels[].name == "dependencies-rebase-requested"] | any' <<< "$pr_json"
+          )"
 
           if [[ "$author" != "app/dependabot" || "$base" != "main" || "$state" != "OPEN" ]]; then
             echo "非開啟中的 main Dependabot PR，停止。"
@@ -58,6 +70,22 @@ jobs:
           fi
           if [[ -n "$TRIGGER_SHA" && "$TRIGGER_SHA" != "$head_sha" ]]; then
             echo "workflow_run 已過期，停止。"
+            exit 0
+          fi
+          if [[ "$mergeable" == "CONFLICTING" || "$merge_state" == "DIRTY" || "$merge_state" == "BEHIND" ]]; then
+            if [[ "$rebase_requested" != "true" ]]; then
+              gh label create "dependencies-rebase-requested" \
+                --color "0969da" \
+                --description "合併序列已要求 Dependabot 依最新 main 重整分支" \
+                --force
+              gh pr edit "$PR_NUMBER" --add-label "dependencies-rebase-requested"
+              gh pr comment "$PR_NUMBER" --body "@dependabot rebase"
+            fi
+            echo "PR 需先依最新 main 重整；等待 synchronize 後重新跑完整 Gate。"
+            exit 0
+          fi
+          if [[ "$mergeable" != "MERGEABLE" ]]; then
+            echo "GitHub 尚無法確認 PR 可合併（$mergeable / $merge_state），停止並等待下一次 Gate。"
             exit 0
           fi
 
@@ -101,7 +129,9 @@ jobs:
 
       - name: 自動核准
         if: steps.gate.outputs.ready == 'true' && steps.gate.outputs.review_decision != 'APPROVED'
-        run: gh pr review "$PR_NUMBER" --approve --body "低風險 Dependabot 更新；必要 CI 與 CodeQL 已全部通過。"
+        run: >-
+          gh pr review "$PR_NUMBER" --approve
+          --body "週期性依賴維護已完成政策分類；必要 CI、工具實跑與 CodeQL 已全部通過。"
 
       - name: 防止換頭或決策變更後自動合併
         if: steps.gate.outputs.ready == 'true'
@@ -127,10 +157,14 @@ jobs:
             ')"
           test "$policy_conclusion" = "success"
 
-      - name: Squash 合併
+      - name: Squash 合併、關閉 PR 並刪除分支
         if: steps.gate.outputs.ready == 'true'
         run: |
           gh pr merge "$PR_NUMBER" \
             --squash \
             --delete-branch \
             --match-head-commit "${{ steps.gate.outputs.head_sha }}"
+
+          merged_json="$(gh pr view "$PR_NUMBER" --json state,closedAt)"
+          test "$(jq -r '.state' <<< "$merged_json")" = "MERGED"
+          test "$(jq -r '.closedAt // empty' <<< "$merged_json")" != ""

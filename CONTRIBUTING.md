@@ -107,6 +107,8 @@ pytest -q
 black --check yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
 isort --check-only yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
 flake8 yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
+pre-commit run --all-files
+python -m pip wheel . --no-deps --wheel-dir build/wheel-check
 
 # 最低 Python 版本相容性檢查（本機多半是新版 Python，靜態確認沒用到 3.11+ 才有的語法）
 vermin -t=3.10- --violations --eval-annotations --no-tips yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
@@ -129,4 +131,3 @@ vermin -t=3.10- --violations --eval-annotations --no-tips yt_fetch.py yt_fetch_g
 - 查看現有的文件和範例
 
 再次感謝您的貢獻！🎉
-

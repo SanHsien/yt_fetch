@@ -15,8 +15,8 @@
 | `.github/dependabot.yml` | 每週檢查 Python 執行期／開發／建置依賴與 GitHub Actions |
 | `.github/workflows/dependency-freshness.yml` | 每月產生 EXE 關鍵依賴報告，需注意時維護同一個 issue |
 | `.github/workflows/dependabot-review.yml` | 在受信任 base commit 判斷 Dependabot 風險，建立綁定 head SHA 的政策 Check |
-| `.github/workflows/dependabot-merge.yml` | 重新驗證作者、政策 Check、head SHA、五平台 CI 與 CodeQL 後才核准／合併 |
-| `tools/classify_dependabot_update.py` | 純邏輯風險矩陣；不確定時預設人工審查 |
+| `.github/workflows/dependabot-merge.yml` | 全域序列化依賴 PR；必要時要求 rebase，重新驗證作者、政策 Check、head SHA、CI 與 CodeQL 後才核准／合併／關閉／刪分支 |
+| `tools/classify_dependabot_update.py` | 純邏輯風險矩陣；CI 直接覆蓋才可自動處理，不確定時預設人工審查 |
 | `.github/workflows/release.yml` | 在 Windows 上自動建置 exe 並於 `v*` 標籤發佈 Release |
 | `tests/` | 基本 smoke test、關鍵 helper 與 GUI 純邏輯測試 |
 | `README.md` | 使用者操作說明 |

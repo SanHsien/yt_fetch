@@ -524,7 +524,7 @@ python yt_fetch.py --channel "@channel" --retries 5
 - **錯誤診斷維護守則**：真實使用中遇到新的 yt-dlp、cookies、ffmpeg、磁碟權限、限流與存取權限錯誤時，補進核心分類器與提示表，讓 CLI/GUI 同步受益。
 - **GUI 維護守則**：現有功能已足夠，後續只在能改善「快速設定、看懂狀態、知道下一步」時調整 UI；優先整理版面密度、文字長度、cookies/ffmpeg/批次狀態與結果區呈現，不堆更多設定面板。
 - **批次下載原則**：維持循序處理，避免大量平行下載造成限流或服務壓力。
-- **發布維護**：只有依賴新鮮度、實際下載問題或核心修正需要使用者取得新版 EXE 時才切 tag 重發。每月 dependency freshness workflow 會比較 repo 宣告的 `yt-dlp`／`imageio-ffmpeg` 基線與 PyPI；每週 Dependabot 另檢查全部 Python 直接依賴與 GitHub Actions。CI 直接覆蓋的低風險 patch／minor PR 會在完整 CI 與 CodeQL 通過後自動核准、合併；重大版本、執行期與發布／打包依賴維持人工審查。每次 Release 固定列出內建 `yt-dlp` 版本、主要變更、已知限制與 SHA256。
+- **發布維護**：只有依賴新鮮度、實際下載問題或核心修正需要使用者取得新版 EXE 時才切 tag 重發。每月 dependency freshness workflow 會比較 repo 宣告的 `yt-dlp`／`imageio-ffmpeg` 基線與 PyPI；每週 Dependabot 另檢查全部 Python 直接依賴與 GitHub Actions。被必要 CI 直接覆蓋的開發／建置工具，在完整 CI、Pre-commit、wheel build 與 CodeQL 通過後會自動核准，透過全域序列在必要時 rebase，再合併、關閉 PR 並刪除分支；執行期依賴、未被驗證的發布工具與 GitHub Actions major 維持人工審查。每次 Release 固定列出內建 `yt-dlp` 版本、主要變更、已知限制與 SHA256。
 - **可選但非優先**：格式轉換可在需求明確時評估；目前固定 MP4，避免增加 ffmpeg 錯誤面與 GUI 複雜度。
 
 ### 暫不做
@@ -598,4 +598,3 @@ python yt_fetch.py --channel "@channel" --retries 5
 - 互動式輸入視窗（未提供 --channel 時會詢問）
 - Cookies 支援（處理年齡/地區限制）
 - 下載速率限制和延遲策略（減少被限流）
-

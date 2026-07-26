@@ -27,7 +27,7 @@ def test_auto_merges_development_minor_with_synced_manifests():
     assert result["decision"] == "auto_merge"
 
 
-def test_requires_manual_review_for_development_major():
+def test_auto_merges_ci_exercised_development_major():
     result = classify_dependabot_update.classify_update(
         ecosystem="pip",
         dependency_type="direct:development",
@@ -36,8 +36,21 @@ def test_requires_manual_review_for_development_major():
         dependency_names=["isort"],
     )
 
-    assert result["decision"] == "manual"
-    assert "重大版本" in result["reason"]
+    assert result["decision"] == "auto_merge"
+    assert "major" in result["reason"]
+
+
+def test_auto_merges_ci_exercised_build_major():
+    result = classify_dependabot_update.classify_update(
+        ecosystem="pip",
+        dependency_type="direct:production",
+        update_type="version-update:semver-major",
+        changed_files=["pyproject.toml"],
+        dependency_names=["setuptools"],
+    )
+
+    assert result["decision"] == "auto_merge"
+    assert "wheel build" in result["reason"]
 
 
 def test_requires_manual_review_for_runtime_patch():
@@ -63,6 +76,19 @@ def test_auto_merges_github_actions_minor_in_workflow_scope():
     )
 
     assert result["decision"] == "auto_merge"
+
+
+def test_requires_manual_review_for_github_actions_major():
+    result = classify_dependabot_update.classify_update(
+        ecosystem="github-actions",
+        dependency_type="direct:production",
+        update_type="version-update:semver-major",
+        changed_files=[".github/workflows/codeql.yml"],
+        dependency_names=["github/codeql-action"],
+    )
+
+    assert result["decision"] == "manual"
+    assert "major" in result["reason"]
 
 
 def test_requires_manual_review_when_action_update_touches_other_files():

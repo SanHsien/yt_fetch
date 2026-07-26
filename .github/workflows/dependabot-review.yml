@@ -60,7 +60,7 @@ jobs:
         run: |
           if [[ "$DECISION" == "auto_merge" ]]; then
             conclusion="success"
-            title="低風險更新，可在必要 checks 通過後自動合併"
+            title="政策已核可，可在必要 checks 通過後自動合併"
           else
             conclusion="neutral"
             title="保留人工審查"
@@ -90,15 +90,22 @@ jobs:
         run: |
           gh label create "dependencies-auto-merge" \
             --color "1f883d" \
-            --description "低風險 Dependabot PR；完整 checks 通過後自動核准與合併" \
+            --description "政策核可的 Dependabot PR；完整 checks 通過後自動核准與合併" \
             --force
           gh label create "dependencies-manual-review" \
             --color "d4a72c" \
             --description "Dependabot 判定需人工審查" \
             --force
+          gh label create "dependencies-rebase-requested" \
+            --color "0969da" \
+            --description "合併序列已要求 Dependabot 依最新 main 重整分支" \
+            --force
 
           current_labels="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name')"
-          for label in dependencies-auto-merge dependencies-manual-review; do
+          for label in \
+            dependencies-auto-merge \
+            dependencies-manual-review \
+            dependencies-rebase-requested; do
             if grep -Fxq "$label" <<< "$current_labels"; then
               gh pr edit "$PR_NUMBER" --remove-label "$label"
             fi

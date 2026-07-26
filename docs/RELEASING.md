@@ -66,15 +66,21 @@ git push origin vX.Y.Z
 - 檢查 GitHub Release 文字是否含主要功能、已知限制與 SHA256；若自動 release notes 不足，手動補上。
 - 於 `main` 新增空的 `[未發布]` 區段，準備下一輪。
 
-## 依賴新鮮度檢查
+## 週期性依賴維護
 
 `yt-dlp` 與 YouTube 行為高度耦合；Windows EXE 會固定打包建置當下版本，因此即使程式碼未變，
-也可能需要重發 Release。維護分成兩層：
+也可能需要重發 Release。每次排程從發現更新到關閉 PR 都屬同一條維護流程：
 
 - 每週 Dependabot：`.github/dependabot.yml`
   - `pip`：全部 Python 執行期、開發與建置依賴；以 `increase` 策略推進 `>=` 最低版本。
   - `github-actions`：所有 workflow 使用的 Actions。
-  - 開發／建置依賴依 patch／minor 與 major 分組，避免重大版本拖住可自動處理的小更新。
+  - 開發／建置依賴依 patch／minor 與 major 分組，讓每個 PR 的風險與失敗原因可獨立判斷。
+  - PR 開啟或更新後，由受信任的 base policy 分類變更範圍與可驗證性。
+  - 政策核可的 PR 等待五平台 CI、Pre-commit、wheel build 與 CodeQL 全數成功。
+  - Gate 再次核對作者、base、head SHA、政策 Check 與標籤後，自動提交 Approve review。
+  - 所有依賴 PR 共用同一條合併序列；落後或衝突時自動要求 Dependabot rebase，並在新
+    head 上重跑整套檢查。
+  - 通過後 squash merge；GitHub 同步把 PR 標為 `MERGED`／關閉，workflow 再刪除遠端分支。
 - 每月 EXE 關鍵依賴排程：`.github/workflows/dependency-freshness.yml`
   - 比較 `pyproject.toml` 宣告的 `yt-dlp`／`imageio-ffmpeg` 基線與 PyPI 最新版。
   - 落後或查詢失敗時建立／更新同一個 issue；恢復最新時自動關閉提醒。
@@ -93,19 +99,21 @@ git push origin vX.Y.Z
 
 | 更新 | 決策 |
 | --- | --- |
-| CI 直接執行的 `black`、`flake8`、`isort`、`pytest`、`vermin`，patch 或 minor，且只改依賴 manifest | 五平台 CI 與 CodeQL 通過後自動核准、squash merge |
+| CI 直接執行的 `black`、`flake8`、`isort`、`pre-commit`、`pytest`、`vermin`，且只改依賴 manifest | patch／minor／major 都在完整 Gate 通過後自動核准、squash merge |
+| `setuptools`、`wheel`，且只改依賴 manifest | 乾淨安裝與 wheel build 通過後自動核准、squash merge |
 | GitHub Actions，patch 或 minor，且只改 `.github/workflows/*.yml`／`*.yaml` | 五平台 CI 與 CodeQL 通過後自動核准、squash merge |
 | Python 執行期依賴（含 `yt-dlp`、`imageio-ffmpeg`） | 人工審查，必要時重跑下載／EXE 驗證 |
-| `pyinstaller`、`setuptools`、`wheel`、`pre-commit` 等未被必要 CI 直接覆蓋的發布／打包工具 | 人工審查，必要時重跑安裝或 EXE build |
-| major、未知 metadata、間接依賴或超出預期檔案範圍 | 人工審查 |
+| `pyinstaller` 等未被必要 CI 直接覆蓋的發布／打包工具 | 人工審查，必要時重跑 Windows EXE build |
+| GitHub Actions major、未知 metadata、間接依賴或超出預期檔案範圍 | 人工審查 |
 
 自動合併不只信任標籤：`dependabot-merge.yml` 還會驗證同一 head SHA 上由
 `github-actions` 建立的成功政策 Check、PR 作者與 base branch、五個 CI matrix jobs、
 CodeQL，並在實際合併前再次確認 head SHA、政策 Check 與標籤未被撤銷。Repository 的
 Actions 預設 token 仍維持 read-only；
 只對這兩個 workflow 宣告最小寫入權限，另須開啟
-`can_approve_pull_request_reviews=true`。同一 PR 的 Gate 使用 concurrency group 序列化，
-避免 CI 與 CodeQL 同時完成時重複核准。
+`can_approve_pull_request_reviews=true`。全部 Dependabot PR 共用全域 concurrency group，
+既避免 CI 與 CodeQL 同時完成時重複核准，也避免多個 manifest PR 同時落地造成衝突。
+被政策保留的 PR 不會自動核准或關閉；只有成功合併才會關閉。
 
 ## PyPI 發布可行性評估
 

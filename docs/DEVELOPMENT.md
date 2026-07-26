@@ -67,17 +67,20 @@ python yt_fetch.py --channel "@channel_handle" --count 1 --sleep 2 --ratelimit 3
 GitHub Actions 會檢查：
 
 - Python 3.10、3.11、3.12。
-- `python -m py_compile yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/generate_readme_screenshot.py tools/check_dependency_freshness.py tools/verify_release_zip.py`。
+- `python -m py_compile yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/generate_readme_screenshot.py tools/check_dependency_freshness.py tools/classify_dependabot_update.py tools/verify_release_zip.py`。
 - `pytest`。
 - vermin 最低版本相容性檢查（`Minimum required versions` 不得高於 3.10）。
 - `black --check yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/`。
 - `isort --check-only yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/`。
 - `flake8 yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/`。
+- Ubuntu／Python 3.12 另跑 `pre-commit run --all-files` 與乾淨 wheel build，直接驗證
+  hook runner、`setuptools` 與 `wheel` 更新。
 - 獨立的 Python CodeQL `security-extended` workflow 會在 push、PR 與每週排程建立 SAST 基線。
 - Dependabot 每週檢查 Python 直接依賴與 GitHub Actions；依賴新鮮度 workflow 每月檢查
   `yt-dlp`／`imageio-ffmpeg` 的 repo 宣告基線，並在需注意時維護提醒 issue。
-- Dependabot PR 會由 `dependabot-review.yml` 判斷風險；只有低風險結果在五平台 CI 與
-  CodeQL 全數成功後，才由 `dependabot-merge.yml` 自動核准並 squash merge。
+- Dependabot PR 會由 `dependabot-review.yml` 判斷變更是否被必要 CI 直接覆蓋；核可後由
+  `dependabot-merge.yml` 等五平台 CI、Pre-commit、wheel build 與 CodeQL 全數成功，再自動
+  Approve，並透過全域序列在必要時 rebase，再 squash merge、關閉 PR 並刪除分支。
 
 本機若使用 Python 3.14，可能比 CI 更嚴格。遇到 packaging 或工具相容問題時，以 CI 支援版本與專案 `pyproject.toml` 為準。
 

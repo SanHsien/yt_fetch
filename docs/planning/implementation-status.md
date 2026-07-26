@@ -53,8 +53,8 @@
 - 支援 `yt_fetch.ini` 記住常用設定；優先序為 CLI > 環境變數 > ini > 內建預設。
 - 支援速率限制、下載間隔、重試次數與環境變數設定。
 - 依賴新鮮度 workflow 每月比較 repo 宣告的 `yt-dlp` / `imageio-ffmpeg` 基線與 PyPI；
-  Dependabot 每週檢查全部 Python 直接依賴與 GitHub Actions，並依風險自動核准／合併
-  低風險 patch、minor 更新。
+  Dependabot 每週檢查全部 Python 直接依賴與 GitHub Actions；被必要 CI 直接覆蓋的更新會
+  自動核准，並透過全域序列在必要時 rebase，再合併／關閉／刪分支。
 - README 中英文、CHANGELOG、發行流程文件與接手文件已建立。
 
 ### 測試與品質
