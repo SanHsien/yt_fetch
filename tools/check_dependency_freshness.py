@@ -8,9 +8,9 @@
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.request
-from importlib import metadata
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
@@ -37,27 +37,53 @@ def fetch_pypi_version(package_name: str, timeout: float = 10.0) -> Optional[str
         return None
 
 
-def installed_version(package_name: str) -> Optional[str]:
-    """回傳目前環境安裝版本；未安裝時回傳 None。"""
-    try:
-        return metadata.version(package_name)
-    except metadata.PackageNotFoundError:
+def normalize_package_name(package_name: str) -> str:
+    """依 Python 套件名稱規則正規化，讓連字號／底線可互相比對。"""
+    return re.sub(r"[-_.]+", "-", package_name).lower()
+
+
+def declared_minimum_version(
+    package_name: str,
+    pyproject_path: Path = ROOT / "pyproject.toml",
+) -> Optional[str]:
+    """讀取 ``[project].dependencies`` 中套件的 ``>=`` 版本基線。"""
+    content = pyproject_path.read_text(encoding="utf-8")
+    project_match = re.search(r"(?ms)^\[project\]\s*(.*?)(?=^\[|\Z)", content)
+    if not project_match:
         return None
+    dependencies_match = re.search(
+        r"(?ms)^dependencies\s*=\s*\[(.*?)^\]",
+        project_match.group(1),
+    )
+    if not dependencies_match:
+        return None
+
+    wanted = normalize_package_name(package_name)
+    for requirement in re.findall(r"""["']([^"']+)["']""", dependencies_match.group(1)):
+        match = re.match(
+            r"\s*([A-Za-z0-9_.-]+)\s*>=\s*([A-Za-z0-9][A-Za-z0-9_.!+-]*)",
+            requirement,
+        )
+        if match and normalize_package_name(match.group(1)) == wanted:
+            return match.group(2)
+    return None
 
 
 def collect_status(packages: Iterable[str]) -> List[Dict[str, object]]:
     """收集每個套件的目前版本、最新版本與是否落後。"""
     rows = []
     for package_name in packages:
-        current = installed_version(package_name)
+        current = declared_minimum_version(package_name)
         latest = fetch_pypi_version(package_name)
         outdated = bool(current and latest and yt_fetch.is_newer_version(latest, current))
+        check_failed = current is None or latest is None
         rows.append(
             {
                 "name": package_name,
-                "current": current or "not installed",
+                "current": current or "unknown",
                 "latest": latest or "unknown",
                 "outdated": outdated,
+                "check_failed": check_failed,
             }
         )
     return rows
@@ -68,11 +94,14 @@ def render_markdown(rows: List[Dict[str, object]]) -> str:
     lines = [
         "# yt_fetch 依賴新鮮度檢查",
         "",
-        "| 套件 | 目前版本 | PyPI 最新 | 狀態 |",
+        "| 套件 | Repo 宣告基線 | PyPI 最新 | 狀態 |",
         "| --- | --- | --- | --- |",
     ]
     for row in rows:
-        status = "需要維護" if row["outdated"] else "OK"
+        if row.get("check_failed"):
+            status = "檢查失敗"
+        else:
+            status = "需要維護" if row["outdated"] else "OK"
         lines.append(f"| `{row['name']}` | `{row['current']}` | `{row['latest']}` | {status} |")
     lines.extend(
         [
@@ -84,13 +113,15 @@ def render_markdown(rows: List[Dict[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def write_github_output(outdated: bool, report_path: Path) -> None:
+def write_github_output(outdated: bool, check_failed: bool, report_path: Path) -> None:
     """寫入 GitHub Actions output。"""
     output_path = os.environ.get("GITHUB_OUTPUT")
     if not output_path:
         return
     with open(output_path, "a", encoding="utf-8") as f:
         f.write(f"outdated={'true' if outdated else 'false'}\n")
+        f.write(f"check_failed={'true' if check_failed else 'false'}\n")
+        f.write(f"needs_attention={'true' if outdated or check_failed else 'false'}\n")
         f.write(f"report_path={report_path.as_posix()}\n")
 
 
@@ -115,8 +146,9 @@ def main() -> int:
     print(report)
 
     outdated = any(bool(row["outdated"]) for row in rows)
+    check_failed = any(bool(row["check_failed"]) for row in rows)
     if args.github_output:
-        write_github_output(outdated, output_path)
+        write_github_output(outdated, check_failed, output_path)
     return 0
 
 

@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Python 執行期、開發與建置依賴；increase 會同步推進目前使用 >= 宣告的最低版本。
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Taipei"
+    versioning-strategy: "increase"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    groups:
+      runtime-dependencies:
+        dependency-type: "production"
+      development-and-build-dependencies:
+        dependency-type: "development"
+
+  # checkout、setup-python、CodeQL、artifact 與 Release actions。
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Taipei"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
