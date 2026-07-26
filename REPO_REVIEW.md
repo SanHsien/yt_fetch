@@ -1,62 +1,86 @@
 # 專案覆核與建議
 
-覆核日期：2026-07-12（Asia/Taipei）
-覆核基準：`main` / GitHub `origin/main` `984e37b1d12b3cb20324e94e4e3c87f1a02441bb`（v1.9.1）
+覆核日期：2026-07-26（Asia/Taipei）
+覆核基準：`main` / GitHub `origin/main` `fcccb99860a2266474bb8db48808abdb4d245343`
 
 ## 結論
 
-專案的基礎品質良好：CLI、GUI、受控登入、發行與文件入口都有明確責任分工，且本地自動化檢查完整通過。不過目前有兩項行為和專案宣告的存取邊界不一致，應在下一次功能修正前優先處理；另一項 cookies 防護可再收緊。
+專案的核心分層、測試與 Release 流程清楚，最新程式碼檢查也成功；但尚不應把目前狀態視為
+可放心重發 Release。兩項 P1 會讓實作偏離「僅處理 YouTube 且保留使用者既有授權」的邊界，
+而 Windows EXE 的下載核心已落後 PyPI。應先補測試並最小修正，再進行使用者主持的實機下載驗收。
 
-## 本次實測
+## 本次已驗證
 
-- `python -m pytest -q`：**102 passed**。
-- Black、isort、flake8、`py_compile`：通過。
-- `python yt_fetch.py --help`：通過。
-- GitHub Actions：最新 `984e37b` 的「程式碼檢查」與「建置 Windows EXE」均成功。
-- GitHub Release：`v1.9.1` 已發布，含 Windows zip 與對應 SHA-256 檔。
-- 工作樹在寫入本檔前為乾淨狀態；`git diff --check` 通過。
+- `HEAD`、`origin/main` 與 GitHub branch ref 均為 `fcccb99`；工作開始時工作樹乾淨。
+- `pytest -q`：**102 passed**；Black、isort、flake8、`py_compile`、`pip check` 與 CLI `--help` 通過。
+- GitHub 最新「程式碼檢查」（2026-07-20，`fcccb99`）成功。
+- `v1.9.1` Release ZIP 已下載到暫存驗證：SHA-256 為
+  `f7398cff51369258b7cab9d9e631d87865fd9ddb5327cf454bd299649cf1fb2c`，Windows
+  `Expand-Archive` 成功，且僅找到一個 `yt_fetch.exe`。
+- 以既有本機 EXE 進行無帳號 GUI smoke：主視窗、說明／語言選單可開啟，關閉後無殘留視窗。
+  未執行剛下載的 EXE、登入或真實下載；這些需要使用者當輪授權。
+- Dependabot open alerts 為 0。GitHub Code Scanning API 回報尚無分析結果；Secret Scanning API
+  因本機 GitHub token 缺少 `admin:repo_hook` scope 無法驗證，不能宣稱其為零。
+- 本輪已新增 [`docs/COMPUTER_USE_VALIDATION.md`](docs/COMPUTER_USE_VALIDATION.md)，並同步
+  `DEVELOPMENT`、`RELEASING`、`HANDOFF`、`AGENTS` 與 `CLAUDE` 的驗收入口。
 
-未執行真實下載或登入：這會觸及個人帳號、cookies 與 YouTube 外部服務，應在修正後由有授權帳號以少量影片做人工驗證。
+## 未解決問題
 
-## 優先修正
+### P1：已授權會員內容會在下載前被排除
 
-### P1：已授權會員內容可能在下載前被錯誤排除
+`_extract_entries()` 固定以 flat 模式取得清單，之後 `filter_downloadable_entries()` 呼叫
+`is_public_video()`；後者與其單元測試明確把 `availability="subscriber_only"` 視為不可下載。
+因此使用者原本有權觀看的會員內容不會進入 yt-dlp 的實際權限驗證，和 README 所稱的已授權
+會員下載及 v1.7.2 的設計意圖衝突。
 
-`_extract_entries()` 固定以 flat 模式讀清單，但 `filter_downloadable_entries()` 隨即透過 `is_public_video()` 排除任何 `availability != "public"` 的項目。若 yt-dlp 在 flat 清單將會員內容標成 `subscriber_only`（或其他需登入狀態），該影片不會進入實際下載階段，因此也不會使用使用者自己的 cookies 判斷其既有權限。
+建議：將「私人／刪除」與「需要登入才可能可下載」分開；後者僅在提供合法 cookies 時保留到
+yt-dlp 實際驗證，未授權時仍由服務端拒絕。先補 `subscriber_only` 的有／無 cookies、private
+永不嘗試、成功後回填的回歸測試。
 
-這和 README、CHANGELOG 對「自己已付費／訂閱的會員影片可在登入後下載」及 v1.7.2「存取權限留到實際下載階段」的說法相衝突。現有會員回填測試的 fake entry 沒有 `availability`，尚未覆蓋這個情境。
+### P1：`--channel` 接受任何 HTTP URL
 
-建議：將候選篩選拆成「明確不可下載」（私人、刪除、無 ID）與「需要登入才可能可下載」兩類；後者只在已提供合法 cookies 時保留到 yt-dlp 實際驗證，未授權時仍讓 yt-dlp 拒絕並跳過。補上 `availability="subscriber_only"` 的有／無 cookies 回歸測試，以及「不嘗試 private」測試。
+`normalize_channel_url()` 只要字串以 `http` 開頭就原樣回傳，非 YouTube 網域也會交給 yt-dlp。
+這違反本專案僅處理指定 YouTube 頻道的範圍，並使使用條款、輸出結構與錯誤提示可能被套用到
+其他網站。
 
-### P1：`--channel` 未限制為 YouTube 來源
+建議：以 `urllib.parse.urlparse()` 驗證 HTTPS 與允許的 YouTube host（含必要短網址）；拒絕
+`http`、`youtube.com.example` 與其他站點，同時保留 `@handle`、`UC...`、channel／playlist URL。
+先補正常與拒絕案例的單元測試。
 
-`normalize_channel_url()` 對任何以 `http` 起始的字串直接原樣回傳，因此 `--channel https://非-youtube-網站/...` 也會交給 yt-dlp。這與專案僅處理使用者指定 YouTube 頻道的宗旨不一致，亦會讓輸出、篩選與著作權提示被誤用到其他站點。
+### P2：受控登入未採最小權限處理 cookies
 
-建議：使用 `urllib.parse.urlparse()` 驗證 scheme 為 HTTPS，host 僅允許 `youtube.com`、其子網域及必要的短網址入口；其他 URL 應以明確錯誤拒絕。保留 `@handle` 與 `UC...` 輸入。新增非 YouTube URL、偽造 host（如 `youtube.com.example`）、HTTP 與合法 YouTube playlist／channel URL 測試。
+兩個 Chrome 啟動路徑都傳入 `--remote-allow-origins=*`，且 `Storage.getCookies`／
+`Network.getAllCookies` 的結果會完整寫入本機 cookies 檔。雖使用隨機本機連接埠，仍應明確
+限制 remote-debugging address 至 `127.0.0.1`、驗證可移除萬用 origin，並把寫入範圍縮到
+YouTube 登入真正需要的網域。這是憑證防護強化，非已知外洩事件。
 
-## 後續改善
+### P2：已發布 EXE 的 `yt-dlp` 已落後
 
-### P2：受控登入的 CDP 權限與 cookies 最小化
+本機依賴檢查顯示已打包／安裝的 `yt-dlp` 為 `2026.6.9`，PyPI 最新為 `2026.7.4`；
+`imageio-ffmpeg` 仍是最新。因 YouTube 介面變動頻繁，應更新依賴、跑本文件的自動與
+使用者主持驗收後切新的 tag。`>=` 只會幫新安裝取得新版，不會更新既有 EXE。
 
-受控 Chrome 以 `--remote-allow-origins=*` 啟動，而 CDP 程式會讀取全部 cookies 並完整寫入本機 `cookies.txt`。目前 remote-debugging port 會由本機隨機連接埠取得，風險較低；但這組設定仍不符合登入憑證應採最小權限的原則。
+### P2：缺少可驗證的程式碼掃描基線
 
-建議：明確加入 `--remote-debugging-address=127.0.0.1`、移除萬用 origin（自製 WebSocket client 未送 `Origin`，應先驗證不需此旗標）；輸出前只保留 YouTube 登入及下載所需網域的 cookies。另補命令列旗標與 cookie 網域 allowlist 的測試。這是安全強化，不代表目前已知有外洩事件。
+Code Scanning API 回 `no analysis found`，目前 workflows 也沒有 Python CodeQL／等效 SAST。
+Dependabot 為零不代表程式碼層安全掃描已完成，尤其本專案處理本機 cookies 與 CDP。
 
-### P3：yt-dlp options 有重複鍵值
+建議：新增最小 Python CodeQL workflow，或明確採用其他可在 CI 留存結果的 SAST；另用有足夠
+權限的維護者 token 確認 Secret Scanning 的啟用與目前狀態。
 
-`build_ytdlp_options()` 中 `retries`、`fragment_retries`、`file_access_retries`、`download_archive`、字幕設定、`progress_hooks` 與 `playlistend` 被重複宣告。Python 會以後面的值覆寫前者，執行結果目前相同，但會增加之後修改一處卻誤以為已生效的風險。
+### P3：yt-dlp options 有重複鍵值，GUI 自動化可觀測性不足
 
-建議：刪除重複區塊，並保留既有 options 建構測試。
+`build_ytdlp_options()` 重複宣告 retries、archive、字幕、progress hook 與 playlist 相關鍵值；
+目前後者覆寫前者而未造成行為差異，但會提高未來修改風險。另本次 Computer Use 實測中，Tk
+選單子項只提供 Automation ID、未提供可讀名稱，代理不能僅以 accessibility tree 判斷操作結果。
 
-### P3：交接文件的測試數過期
+建議：刪除重複 options；GUI 方面保留本輪新增文件的「每步重新截圖」規則，並在後續 UI 調整時
+評估補可讀的 accessibility name 或可觀測的狀態文字。
 
-`docs/HANDOFF.md` 仍記錄「目前測試數為 96」，本次實測為 102；同檔也留有 v1.3.0 Release 已發布的歷史敘述，和現行 v1.9.1 的交接狀態混在一起。
+## 建議順序
 
-建議：將測試數更新為 102，並把舊 release 敘述改為「目前 v1.9.1 已發布」或移到 CHANGELOG，讓 HANDOFF 只保留現況與下一步。
-
-## 建議執行順序
-
-1. 先以測試鎖住 P1 的會員 `availability` 與 YouTube URL 邊界，再做最小修正。
-2. 使用自己的測試帳號／公開測試頻道，人工確認：公開影片、已授權會員影片、未授權會員影片、私人影片四種結果。
-3. 收緊 CDP 旗標與 cookies 網域範圍，重新執行本地檢查與 Windows EXE 建置。
-4. 最後同步更新 HANDOFF 與使用者文件，建立新的修正版 Release。
+1. 先以測試修正兩項 P1，再同步 README／中英文說明與安全提示。
+2. 收緊 CDP cookies 範圍，加入 SAST，更新 `yt-dlp` 至 `2026.7.4`。
+3. 建置候選 EXE，依 `COMPUTER_USE_VALIDATION.md` 先做無帳號 smoke。
+4. 由使用者以自己的公開或已授權內容，完成單支下載、冪等、未授權拒絕與（若需要）登入驗收。
+5. 所有必要項目 PASS 後才切新 tag；修 bug 時回註本檔的修復 commit 與日期。

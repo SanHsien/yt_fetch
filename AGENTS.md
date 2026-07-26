@@ -72,5 +72,6 @@ python yt_fetch.py --channel "@channel_handle"
 - 接手狀態：`docs/HANDOFF.md`
 - 架構概要：`docs/ARCHITECTURE.md`
 - 開發驗證：`docs/DEVELOPMENT.md`
+- Windows／Computer Use 實機驗證：`docs/COMPUTER_USE_VALIDATION.md`
 - 第三方工具與風險：`docs/third-party-youtube-tooling.md`
 - 規劃與歷史規格：`docs/planning/`

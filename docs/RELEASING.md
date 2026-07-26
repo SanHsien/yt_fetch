@@ -36,6 +36,9 @@
    - 已知限制：未簽章 EXE 可能觸發 SmartScreen、EXE 內建 `yt-dlp` 會隨 YouTube 改版而過期。
    - Windows zip 的 SHA256（以 workflow 產生的 `.sha256` 為準）。
 6. 確認 `main` 上 CI（程式碼檢查）為綠。
+7. 依 [`COMPUTER_USE_VALIDATION.md`](COMPUTER_USE_VALIDATION.md) 完成 Windows ZIP／SHA-256／
+   解壓 round-trip 與 GUI 實機驗收；任何需要登入、cookies 或真實下載的步驟都必須由使用者
+   在當輪明確授權下主持。
 
 ## 切標籤與發佈
 

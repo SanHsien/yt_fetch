@@ -43,6 +43,10 @@ python yt_fetch.py --help
 
 ## 手動 smoke test
 
+Windows GUI、Release ZIP 與 Computer Use 的實機驗收規範見
+[`COMPUTER_USE_VALIDATION.md`](COMPUTER_USE_VALIDATION.md)。它和下列本地 smoke test
+互補：自動化檢查通過不等於桌面 UI 或使用者下載到的 EXE 已實際驗收。
+
 不要在 CI 或自動化測試裡下載真實影片。需要人工確認時，使用少量公開頻道並加上保守參數：
 
 ```bash

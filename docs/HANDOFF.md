@@ -1,6 +1,6 @@
 # 接手狀態
 
-更新日期：2026-07-04
+更新日期：2026-07-26
 
 ## 專案概況
 
@@ -16,7 +16,8 @@
 - 測試：`tests/`（`test_smoke.py`、`test_gui.py`、`test_cdp_cookies.py`、
   `test_dependency_freshness.py`、`conftest.py`）
 - 文件：`README.md` / `README.en.md`、`docs/ARCHITECTURE.md`、`docs/DEVELOPMENT.md`、
-  `docs/RELEASING.md`、`docs/screenshot-workflow.md`、`docs/planning/`
+  `docs/RELEASING.md`、`docs/COMPUTER_USE_VALIDATION.md`、`docs/screenshot-workflow.md`、
+  `docs/planning/`
 - Agent 指引：`AGENTS.md`、`CLAUDE.md`
 
 ## 近期完成（roadmap）
@@ -26,10 +27,10 @@
 - ✅ 設定檔 `yt_fetch.ini`（configparser）：優先序 CLI > 環境變數 > ini > 內建；**不保存 cookies**。
 - ✅ 多頻道批次下載 `--channels-file`（單一失敗不中斷整批）＋結果報表。
 - ✅ 可測化：抽出 `build_channel_urls`、`filter_downloadable_entries`、`find_downloaded_file`、
-  `filter_reason`、`is_non_public` 等純函式；目前測試數為 96。
+  `filter_reason`、`is_non_public` 等純函式；目前測試數為 102。
 - ✅ UX：`--help` 乾淨輸出、env 數字防呆、Ctrl+C 乾淨退出、cookies 安全提醒。
 - ✅ 跨平台 CI（Ubuntu/Windows/macOS）＋ console script 與 `--help` smoke。
-- ✅ v1.3.0 GitHub Release 已發布並驗證 Windows zip 與 `.sha256`。
+- ✅ v1.9.1 GitHub Release 已發布；Windows zip 與 `.sha256` 可從 GitHub Release 下載驗證。
 - ✅ 正確性修正：`--count` 以頻道計、Shorts 不誤殺正常短片、下載偵測 glob bug。
 - ✅ v1.4.0：受控瀏覽器登入取得 cookies（解決 Chrome 127+ App-Bound Encryption，
   `chrome_cdp_cookies` 模組 + `--login` + GUI 登入按鈕）；GUI 移除手動 cookies 欄位、

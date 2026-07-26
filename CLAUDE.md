@@ -47,6 +47,7 @@
 
 - `README.md`：使用方法與 CLI 參數。
 - `docs/DEVELOPMENT.md`：建置與驗證流程。
+- `docs/COMPUTER_USE_VALIDATION.md`：Windows GUI、Release ZIP 與受監督 Computer Use 實機驗收。
 - `docs/ARCHITECTURE.md`：程式結構與資料流。
 - `docs/HANDOFF.md`：接手狀態。
 - `docs/planning/`：規劃與歷史規格文件。
