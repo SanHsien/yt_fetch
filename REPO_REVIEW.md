@@ -1,7 +1,7 @@
 # 專案覆核與建議
 
 覆核日期：2026-07-26（Asia/Taipei）
-覆核基準：`main` `cafb8c6`（文件提交前；遠端同步狀態於推送後重驗）
+覆核基準：`main` `b90816f`（文件提交前；遠端同步狀態於推送後重驗）
 
 ## 結論
 
@@ -15,7 +15,7 @@ Release ZIP 驗證。但尚不應把目前狀態視為可放心重發 Release：
 - 工作開始時 `HEAD == origin/main == 784bf16` 且工作樹乾淨；推送後同步狀態另於交付前重驗。
 - `pytest -q`：**115 passed**；Black、isort、flake8、`py_compile`、vermin（最低需求 3.8）
   與 CLI `--help` 通過。
-- GitHub 最新「程式碼檢查」（2026-07-20，`fcccb99`）成功。
+- GitHub「程式碼檢查」（`925153b`）五個 OS／Python 矩陣均成功。
 - `v1.9.1` Release ZIP 已下載到暫存驗證：SHA-256 為
   `f7398cff51369258b7cab9d9e631d87865fd9ddb5327cf454bd299649cf1fb2c`，Windows
   `Expand-Archive` 成功；新增驗證器也確認 CRC 正常，且 ZIP 僅含根目錄下一個非空的
@@ -40,6 +40,10 @@ Release ZIP 驗證。但尚不應把目前狀態視為可放心重發 Release：
   負數。現在由 argparse 明確拒絕，並加入四個回歸案例。修復：`cafb8c6`（2026-07-26）。
 - **桌面驗收基線少一項 CI gate**：實機文件未列 vermin，且 `py_compile` 不含新驗證工具。
   已與 CI／開發文件同步。修復：`cafb8c6`（2026-07-26）。
+- **GitHub Actions 使用淘汰的 Node.js 20 runtime**：推送後 CI 雖成功，但
+  `actions/checkout@v4` 與 `actions/setup-python@v5` 產生 runtime 淘汰警告。已依官方最新
+  release 將三個 workflow 統一升級至 v7；最終 CI 狀態於交付前重驗。修復：`b90816f`
+  （2026-07-26）。
 
 ## 未解決問題
 
