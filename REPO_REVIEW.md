@@ -94,7 +94,8 @@ PyPI 查詢失敗也會標為需要注意。另比照其他專案新增每週 De
 | pytest | PASS | 140 passed |
 | black / isort / flake8 | PASS | 全部通過 |
 | py_compile / vermin / CLI help | PASS | vermin 最低需求 3.8，低於專案 3.10 基線 |
-| 依賴新鮮度 | PASS | `yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新 |
+| 依賴新鮮度 | PASS | 手動觸發 run `30193431045`；`yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新，無多餘 issue |
+| Dependabot 排程 | PASS | GitHub 接受設定；初次 `pip` run `30193427221`、Actions run `30193427154` 均成功，並建立開發／建置依賴 PR #5 |
 | 本機 PyInstaller 候選 | PASS | `dist/yt_fetch.exe` 成功建置，非空 |
 | 本機候選 Windows GUI smoke | PASS | 啟動、繁中／英文切換、About 顯示 `1.9.2`／`yt-dlp 2026.7.4`、`count=0` 阻擋、正常結束 |
 | GitHub 程式碼檢查 | PASS | 發行 commit run `30192819296`，五個 OS／Python jobs 全數成功 |
