@@ -121,12 +121,12 @@ squash merge、關閉並刪除分支；#12、#13 也實際驗證同檔衝突後 
 | py_compile / vermin / CLI help | PASS | vermin 最低需求 3.8，低於專案 3.10 基線 |
 | 依賴新鮮度 | PASS | 手動觸發 run `30193431045`；`yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新，無多餘 issue |
 | Dependabot 排程 | PASS | GitHub 接受 pip／Actions 設定；舊混合 PR #5 已依新分組自動關閉並拆分 |
-| Dependabot 自動判斷 | PASS | #8、#10 由 Actions 自動核准／合併；#7、#9、#11、#12、#13 完成實際審核、Approve、合併、關閉與刪分支，#12／#13 驗證 rebase 後重跑 checks |
+| Dependabot 自動判斷 | PASS | #8、#10 由 Actions 自動核准／合併；#7、#9、#11、#12、#13 完成實際審核、Approve、合併、關閉與刪分支，#12／#13 驗證 rebase 後重跑 checks；新版 Gate 安全停止已關閉 PR：run `30196029841` |
 | Actions 核准權限 | PASS | default workflow permissions 維持 `read`；僅開啟 `can_approve_pull_request_reviews` |
 | 本機 PyInstaller 候選 | PASS | `dist/yt_fetch.exe` 成功建置，非空 |
 | 本機候選 Windows GUI smoke | PASS | 啟動、繁中／英文切換、About 顯示 `1.9.2`／`yt-dlp 2026.7.4`、`count=0` 阻擋、正常結束 |
-| GitHub 程式碼檢查 | PASS | 發行 commit run `30192819296`，五個 OS／Python jobs 全數成功 |
-| GitHub CodeQL | PASS | 發行 commit run `30192819270`；open alerts 0 |
+| GitHub 程式碼檢查 | PASS | 自動化實作 tip run `30196028150`，五個 OS／Python jobs 全數成功；Ubuntu 3.12 的 Pre-commit 與 wheel build 皆成功 |
+| GitHub CodeQL | PASS | 自動化實作 tip run `30196028187`；open alerts 0 |
 | GitHub Secret Scanning | PASS | open alerts 0 |
 | GitHub Release workflow | PASS | run `30192870967`；Windows build 與 publish 成功 |
 | 正式 Release ZIP | PASS | ZIP 55,060,574 bytes；SHA-256 `e10d75d1c00ac92ba1112a2439b7d9e4b1909c2f107049776c5c0f311665e9ff`；checksum、CRC、唯一根目錄 EXE 與 `Expand-Archive` 均通過 |
