@@ -23,6 +23,8 @@
 - 自動與人工依賴 PR 合併後都會立即重跑 freshness；維護 issue 改為固定 reopen／更新內容、
   指派 repo owner 並列出 open Dependabot PR，透過 concurrency 與最新 main SHA 防止舊結果
   覆寫；追蹤依賴恢復最新且沒有 open PR 才關閉。
+- Guarded merge 每次觸發都重新掃描 auto-merge label queue，避免 GitHub concurrency
+  取消較舊 pending event 時漏掉已完成 checks 的 PR。
 
 ## [1.9.2] - 2026-07-26
 

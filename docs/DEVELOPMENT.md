@@ -83,6 +83,8 @@ GitHub Actions 會檢查：
   Approve，並透過全域序列在必要時 rebase，再 squash merge、關閉 PR 並刪除分支。自動
   合併會 explicit dispatch freshness；人工合併或直接更新 manifest 由 `main` push 重驗。
   固定 reopen／更新並指派同一個維護 issue；追蹤依賴最新且無 open Dependabot PR 才關閉。
+  Merge workflow 每次觸發都重掃 auto-merge labels 並按 PR number 取最前一筆，避免
+  GitHub concurrency 取消較舊 pending event 時漏掉已完成 checks 的 PR。
 
 本機若使用 Python 3.14，可能比 CI 更嚴格。遇到 packaging 或工具相容問題時，以 CI 支援版本與專案 `pyproject.toml` 為準。
 

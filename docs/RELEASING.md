@@ -80,6 +80,8 @@ git push origin vX.Y.Z
   - Gate 再次核對作者、base、head SHA、政策 Check 與標籤後，自動提交 Approve review。
   - 所有依賴 PR 共用同一條合併序列；落後或衝突時自動要求 Dependabot rebase，並在新
     head 上重跑整套檢查。
+  - GitHub concurrency 只保留一個 pending run，因此每次觸發都重新掃描全部
+    `dependencies-auto-merge` PR，按 PR number 處理最前一筆，不把事件本身當 FIFO。
   - 通過後 squash merge；GitHub 同步把 PR 標為 `MERGED`／關閉，workflow 再刪除遠端分支。
   - 自動合併後 explicit dispatch dependency freshness；人工合併由 manifest 的 `main` push
     觸發，讓維護 issue 跟上最新 `main`。

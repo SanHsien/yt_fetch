@@ -33,6 +33,10 @@ def test_dependabot_review_and_merge_workflows_keep_strict_guards():
     assert "actions: write" in merge
     assert "group: dependabot-merge-" in merge
     assert "cancel-in-progress: false" in merge
+    assert "選取合併序列最前方 PR" in merge
+    assert "--label dependencies-auto-merge" in merge
+    assert "sort_by(.number)" in merge
+    assert "github.event.workflow_run.conclusion == 'success'" in merge
     assert "GH_REPO: ${{ github.repository }}" in merge
     assert 'author" != "app/dependabot"' in merge
     assert "dependencies-auto-merge" in merge
