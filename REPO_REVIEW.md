@@ -80,7 +80,8 @@ Actions major 與無法確認的情況仍保留人工審查。
 concurrency queue；衝突或落後時只送一次 `@dependabot rebase`，在新 head 重跑 checks 後
 再 squash merge。成功合併會同步關閉 PR 並刪除遠端分支，未合併的 PR 不會自動關閉。
 
-- 修復：`bb30378`、`b72f3ba`、`b26770f`、`2a166ab`、`35fb6fb`（2026-07-26）
+- 修復：`bb30378`、`b72f3ba`、`b26770f`、`2a166ab`、`35fb6fb`、`95ca32b`
+  （2026-07-26）
 - 回歸：十種風險矩陣情境與 workflow 權限、作者、政策 Check、必要 checks、換頭保護、
   全域序列、rebase 去重、合併後關閉狀態
 
