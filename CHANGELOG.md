@@ -14,6 +14,7 @@
 ### 驗證
 - 新增 Release ZIP 驗證工具與測試，檢查 CRC、危險／重複路徑、唯一根目錄 EXE 與非空內容。
 - Windows 實機驗收改用每次唯一的暫存目錄，並納入 ZIP 版面與 Python 3.10 相容性檢查。
+- GitHub Actions 升級至 Node.js 24 runtime 的 `checkout`／`setup-python` v7。
 
 ## [1.9.1] - 2026-07-04
 
