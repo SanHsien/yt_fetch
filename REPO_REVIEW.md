@@ -102,6 +102,14 @@ PR，並固定 reopen／更新、指派同一 tracker。追蹤依賴最新且沒
 - 回歸：dispatch 權限、label bootstrap、人工合併 trigger、concurrency、stale SHA 防護、
   fixed tracker reopen 與 open PR close gate
 
+實際以三個並行 Dependabot PR 重驗時確認，GitHub concurrency 最多只保留一個 pending run，
+所以事件本身不能當完整 FIFO。後續改為任何 check／dispatch 觸發都重掃 auto-merge label
+queue，按 PR number 選最前一筆，較舊事件被取消也不會遺失 PR。
+
+- 修復：`b31fd9c`（2026-07-26）
+- 回歸：全域 queue 掃描、排序選取、無候選安全停止，以及成功 workflow_run 無 PR metadata
+  時仍會啟動 reconciler
+
 ### 其他本輪修正
 
 - `download/`、CLI 數值邊界、Release ZIP 驗證與桌面驗收基線：`cafb8c6`
