@@ -99,13 +99,29 @@ jobs:
         if: steps.gate.outputs.ready == 'true' && steps.gate.outputs.review_decision != 'APPROVED'
         run: gh pr review "$PR_NUMBER" --approve --body "低風險 Dependabot 更新；必要 CI 與 CodeQL 已全部通過。"
 
-      - name: 防止換頭後自動合併
+      - name: 防止換頭或決策變更後自動合併
         if: steps.gate.outputs.ready == 'true'
         env:
           EXPECTED_HEAD: ${{ steps.gate.outputs.head_sha }}
         run: |
-          current_head="$(gh pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid')"
+          current_json="$(gh pr view "$PR_NUMBER" --json headRefOid,labels)"
+          current_head="$(jq -r '.headRefOid' <<< "$current_json")"
+          auto_label="$(jq -r '[.labels[].name == "dependencies-auto-merge"] | any' <<< "$current_json")"
+          manual_label="$(jq -r '[.labels[].name == "dependencies-manual-review"] | any' <<< "$current_json")"
           test "$current_head" = "$EXPECTED_HEAD"
+          test "$auto_label" = "true"
+          test "$manual_label" = "false"
+
+          policy_conclusion="$(gh api \
+            "repos/$GITHUB_REPOSITORY/commits/$current_head/check-runs?per_page=100" \
+            --jq '
+              .check_runs
+              | map(select(.name == "Dependabot policy" and .app.slug == "github-actions"))
+              | sort_by(.started_at)
+              | reverse
+              | .[0].conclusion // "MISSING"
+            ')"
+          test "$policy_conclusion" = "success"
 
       - name: Squash 合併
         if: steps.gate.outputs.ready == 'true'

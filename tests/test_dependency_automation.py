@@ -34,6 +34,8 @@ def test_dependabot_review_and_merge_workflows_keep_strict_guards():
     assert 'author" != "app/dependabot"' in merge
     assert "dependencies-auto-merge" in merge
     assert 'app.slug == "github-actions"' in merge
+    assert merge.count("dependencies-auto-merge") >= 2
+    assert "dependencies-manual-review" in merge
     assert "--match-head-commit" in merge
     assert "check (windows-latest, 3.12)" in merge
     assert "Python security scan" in merge
