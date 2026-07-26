@@ -74,6 +74,7 @@ git push origin vX.Y.Z
 - 每週 Dependabot：`.github/dependabot.yml`
   - `pip`：全部 Python 執行期、開發與建置依賴；以 `increase` 策略推進 `>=` 最低版本。
   - `github-actions`：所有 workflow 使用的 Actions。
+  - 開發／建置依賴依 patch／minor 與 major 分組，避免重大版本拖住可自動處理的小更新。
 - 每月 EXE 關鍵依賴排程：`.github/workflows/dependency-freshness.yml`
   - 比較 `pyproject.toml` 宣告的 `yt-dlp`／`imageio-ffmpeg` 基線與 PyPI 最新版。
   - 落後或查詢失敗時建立／更新同一個 issue；恢復最新時自動關閉提醒。
@@ -84,6 +85,24 @@ git push origin vX.Y.Z
   ```
 - Dependabot PR 或月報顯示依賴落後時，先確認 changelog／相容性並跑完整測試；只有需要讓
   Windows 使用者取得新內建版本時，才推進 patch 版本並切 tag 重發 EXE。
+
+### Dependabot 自動核准政策
+
+`dependabot-review.yml` 只從受信任的 base commit 執行政策程式，不 checkout 或執行 PR
+程式碼；`dependabot/fetch-metadata` 固定完整 commit SHA。判斷如下：
+
+| 更新 | 決策 |
+| --- | --- |
+| Python 直接開發／建置依賴，patch 或 minor，且只改 `pyproject.toml`／`requirements.txt` | 五平台 CI 與 CodeQL 通過後自動核准、squash merge |
+| GitHub Actions，patch 或 minor，且只改 `.github/workflows/*.yml`／`*.yaml` | 五平台 CI 與 CodeQL 通過後自動核准、squash merge |
+| Python 執行期依賴（含 `yt-dlp`、`imageio-ffmpeg`） | 人工審查，必要時重跑下載／EXE 驗證 |
+| major、未知 metadata、間接依賴或超出預期檔案範圍 | 人工審查 |
+
+自動合併不只信任標籤：`dependabot-merge.yml` 還會驗證同一 head SHA 上由
+`github-actions` 建立的成功政策 Check、PR 作者與 base branch、五個 CI matrix jobs、
+CodeQL，以及合併當下 head SHA 未改變。Repository 的 Actions 預設 token 仍維持 read-only；
+只對這兩個 workflow 宣告最小寫入權限，另須開啟
+`can_approve_pull_request_reviews=true`。
 
 ## PyPI 發布可行性評估
 

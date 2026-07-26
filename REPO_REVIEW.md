@@ -6,7 +6,7 @@
 
 ## 結論
 
-- 先前 review 的兩項 P1 與三項 P2 已修正，沒有仍阻擋 `v1.9.2` 的程式問題。
+- 本輪 review 的兩項 P1 與五項 P2 已修正，沒有仍阻擋目前 `main` 的程式問題。
 - `v1.9.2` 已於 GitHub Release 發布：修正已授權內容候選被提早排除、安全收緊、依賴更新與
   CI／Release 工具鏈維護，沒有不相容介面變更。
 - 自動測試、本機候選 EXE、正式 Release ZIP 與 GitHub 掃描均已重驗；真實下載、受控登入與帳號權限情境仍依
@@ -68,6 +68,16 @@ PyPI 查詢失敗也會標為需要注意。另比照其他專案新增每週 De
 - 修復：`b3a9117`（2026-07-26）
 - 回歸：宣告基線解析、套件名稱正規化、落後判斷、查詢失敗與 Dependabot 排程設定
 
+### P2：Dependabot 只開 PR，沒有自動風險判斷與核准
+
+現在會先依套件生態系、依賴類型、semver 幅度與變更檔案範圍分類；只有低風險結果能取得
+綁定 head SHA 的成功政策 Check。合併 workflow 另要求五平台 CI、CodeQL、Dependabot 作者、
+`main` base 與相同 head SHA 全部成立，才提交核准並 squash merge。重大版本、執行期依賴
+與無法確認的情況一律保留人工審查。
+
+- 修復：`bb30378`（2026-07-26）
+- 回歸：七種風險矩陣情境與 workflow 權限、作者、政策 Check、必要 checks、換頭保護
+
 ### 其他本輪修正
 
 - `download/`、CLI 數值邊界、Release ZIP 驗證與桌面驗收基線：`cafb8c6`
@@ -91,7 +101,7 @@ PyPI 查詢失敗也會標為需要注意。另比照其他專案新增每週 De
 
 | 類別 | 結果 | 證據 |
 | --- | --- | --- |
-| pytest | PASS | 140 passed |
+| pytest | PASS | 148 passed |
 | black / isort / flake8 | PASS | 全部通過 |
 | py_compile / vermin / CLI help | PASS | vermin 最低需求 3.8，低於專案 3.10 基線 |
 | 依賴新鮮度 | PASS | 手動觸發 run `30193431045`；`yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新，無多餘 issue |

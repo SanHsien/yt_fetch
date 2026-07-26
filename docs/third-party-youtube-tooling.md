@@ -18,6 +18,8 @@
   `imageio-ffmpeg` 基線；落後或查詢失敗時建立／更新維護 issue，恢復最新時自動關閉。
 - 每週 Dependabot 另檢查全部 Python 直接依賴及 GitHub Actions，避免開發、建置與 CI 工具
   被兩個 EXE 關鍵依賴以外的範圍漏掉。
+- 執行期依賴不進自動核准；即使是 patch 更新，也要依本文件的 YouTube／cookies 風險邊界
+  人工判斷是否需要真實下載或 EXE 驗證。
 - 本地可執行 `python tools/check_dependency_freshness.py` 產生 Markdown 報告。
 
 ## cookies 使用邊界

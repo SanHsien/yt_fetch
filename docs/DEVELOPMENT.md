@@ -76,6 +76,8 @@ GitHub Actions 會檢查：
 - 獨立的 Python CodeQL `security-extended` workflow 會在 push、PR 與每週排程建立 SAST 基線。
 - Dependabot 每週檢查 Python 直接依賴與 GitHub Actions；依賴新鮮度 workflow 每月檢查
   `yt-dlp`／`imageio-ffmpeg` 的 repo 宣告基線，並在需注意時維護提醒 issue。
+- Dependabot PR 會由 `dependabot-review.yml` 判斷風險；只有低風險結果在五平台 CI 與
+  CodeQL 全數成功後，才由 `dependabot-merge.yml` 自動核准並 squash merge。
 
 本機若使用 Python 3.14，可能比 CI 更嚴格。遇到 packaging 或工具相容問題時，以 CI 支援版本與專案 `pyproject.toml` 為準。
 
