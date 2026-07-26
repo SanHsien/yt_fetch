@@ -53,7 +53,8 @@
   提早排除；受控 Chrome 限 loopback 並縮小 cookies 網域；更新 `yt-dlp` 至 `2026.7.4`，
   補上 CodeQL 與新版 Release Actions。
 
-當前版本：`1.9.2`（pyproject、__version__ 與 CHANGELOG 同步；發布標籤為 `v1.9.2`）。
+當前版本：`1.9.2`（pyproject、__version__ 與 CHANGELOG 同步；`v1.9.2` GitHub Release
+已發布，正式 Windows ZIP 的 checksum、CRC、壓縮結構與解壓均已驗證）。
 
 ## 已知注意事項
 

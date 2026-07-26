@@ -2,14 +2,14 @@
 
 覆核日期：2026-07-26
 
-覆核範圍：`v1.9.2` 發行候選、Windows EXE、GitHub Actions、CodeQL、文件與發佈流程
+覆核範圍：`v1.9.2`、Windows EXE、GitHub Actions、CodeQL、文件與發佈流程
 
 ## 結論
 
 - 先前 review 的兩項 P1 與三項 P2 已修正，沒有仍阻擋 `v1.9.2` 的程式問題。
-- `v1.9.2` 適合作為 patch release：修正已授權內容候選被提早排除、安全收緊、依賴更新與
+- `v1.9.2` 已於 GitHub Release 發布：修正已授權內容候選被提早排除、安全收緊、依賴更新與
   CI／Release 工具鏈維護，沒有不相容介面變更。
-- 自動測試、本機候選 EXE 與 GitHub 掃描均已重驗；真實下載、受控登入與帳號權限情境仍依
+- 自動測試、本機候選 EXE、正式 Release ZIP 與 GitHub 掃描均已重驗；真實下載、受控登入與帳號權限情境仍依
   `docs/COMPUTER_USE_VALIDATION.md` 由使用者主持，不能以 mock 或畫面 smoke 代替。
 
 ## 已修正問題
@@ -55,8 +55,8 @@ Scanning open alerts 都是 0。
 
 - workflow：`5e1715a`（2026-07-26）
 - alert 修正：`cb550d5`（2026-07-26）
-- CodeQL run：`30192709674`
-- 程式碼檢查 run：`30192709665`
+- `v1.9.2` 發行 commit CodeQL run：`30192819270`
+- `v1.9.2` 發行 commit 程式碼檢查 run：`30192819296`
 
 ### 其他本輪修正
 
@@ -86,21 +86,22 @@ Scanning open alerts 都是 0。
 | py_compile / vermin / CLI help | PASS | vermin 最低需求 3.8，低於專案 3.10 基線 |
 | 依賴新鮮度 | PASS | `yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新 |
 | 本機 PyInstaller 候選 | PASS | `dist/yt_fetch.exe` 成功建置，非空 |
-| Windows 無帳號 GUI smoke | PASS | 啟動、繁中／英文切換、About 版本、`count=0` 阻擋、正常結束 |
-| GitHub 程式碼檢查 | PASS | run `30192709665` |
-| GitHub CodeQL | PASS | run `30192709674`；open alerts 0 |
+| 本機候選 Windows GUI smoke | PASS | 啟動、繁中／英文切換、About 顯示 `1.9.2`／`yt-dlp 2026.7.4`、`count=0` 阻擋、正常結束 |
+| GitHub 程式碼檢查 | PASS | 發行 commit run `30192819296`，五個 OS／Python jobs 全數成功 |
+| GitHub CodeQL | PASS | 發行 commit run `30192819270`；open alerts 0 |
 | GitHub Secret Scanning | PASS | open alerts 0 |
+| GitHub Release workflow | PASS | run `30192870967`；Windows build 與 publish 成功 |
+| 正式 Release ZIP | PASS | ZIP 55,060,574 bytes；SHA-256 `e10d75d1c00ac92ba1112a2439b7d9e4b1909c2f107049776c5c0f311665e9ff`；checksum、CRC、唯一根目錄 EXE 與 `Expand-Archive` 均通過 |
+| 正式 Release EXE GUI smoke | BLOCKED | 啟動網路下載取得的新軟體須由使用者在 Computer Use 操作當下確認；不以本機候選結果冒充 |
 | 真實公開下載與冪等 | BLOCKED | 尚未由使用者提供本輪授權測試頻道 |
 | 已授權會員／登入／拒絕情境 | BLOCKED | 必須由使用者親自登入並主持 |
 
-## 發佈與後續 Gate
+## 發佈結果與剩餘使用者主持 Gate
 
-1. 推送 `v1.9.2` 發行 commit，等 `main` 的程式碼檢查與 CodeQL 通過。
-2. 推送 `v1.9.2` tag，等待 Windows Release workflow 完成。
-3. 從 GitHub Release 重新下載 ZIP 與 `.sha256`，驗證 SHA-256、CRC、唯一根目錄 EXE 與
-   Windows `Expand-Archive`。
-4. 依 `docs/COMPUTER_USE_VALIDATION.md` 對「實際 Release 資產」重跑無帳號 GUI smoke。
-5. 真實下載與登入情境維持 `BLOCKED`，直到使用者以自己的公開／已授權內容主持驗收。
+1. `v1.9.2` tag 已指向發行 commit `929a580`，GitHub Release 已發布。
+2. Release workflow、正式 ZIP 與 `.sha256` 已驗證；Release 頁面已補齊重點變更、已知限制與
+   完整 checksum。
+3. 正式 Release EXE GUI smoke 仍須使用者在啟動該新下載程式的操作當下明確確認。
+4. 真實下載與登入情境維持 `BLOCKED`，直到使用者以自己的公開／已授權內容主持驗收。
 
-本文件維持 latest-only；Release 完成後，以實際 run、資產雜湊與桌面驗收結果覆寫上述發佈
-狀態，不另保留過期候選結論。
+本文件維持 latest-only；上述為本次實際發佈結果，不另保留過期候選結論。
