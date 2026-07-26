@@ -70,19 +70,26 @@ PyPI 查詢失敗也會標為需要注意。另比照其他專案新增每週 De
 
 ### P2：Dependabot 只開 PR，沒有自動風險判斷與核准
 
-現在會先依套件生態系、依賴名稱、依賴類型、semver 幅度與變更檔案範圍分類；只有低風險結果能取得
-綁定 head SHA 的成功政策 Check。合併 workflow 另要求五平台 CI、CodeQL、Dependabot 作者、
-`main` base 與相同 head SHA 全部成立，才提交核准並 squash merge。重大版本、執行期依賴、
-未被必要 CI 直接覆蓋的發布／打包工具與無法確認的情況一律保留人工審查。
+現在會先依套件生態系、依賴名稱、依賴類型、semver 幅度與變更檔案範圍分類；只有被必要
+CI 直接覆蓋的結果能取得綁定 head SHA 的成功政策 Check。開發工具的 major 更新會實跑
+對應工具，`setuptools`／`wheel` 會做乾淨 wheel build；執行期依賴、未覆蓋的發布工具、
+Actions major 與無法確認的情況仍保留人工審查。
 
-- 修復：`bb30378`、`b72f3ba`、`b26770f`、`2a166ab`（2026-07-26）
-- 回歸：八種風險矩陣情境與 workflow 權限、作者、政策 Check、必要 checks、換頭保護
+合併 workflow 另要求五平台 CI、Pre-commit、wheel build、CodeQL、Dependabot 作者、
+`main` base 與相同 head SHA 全部成立，才提交 Approve review。全部依賴 PR 共用全域
+concurrency queue；衝突或落後時只送一次 `@dependabot rebase`，在新 head 重跑 checks 後
+再 squash merge。成功合併會同步關閉 PR 並刪除遠端分支，未合併的 PR 不會自動關閉。
+
+- 修復：`bb30378`、`b72f3ba`、`b26770f`、`2a166ab`、`35fb6fb`（2026-07-26）
+- 回歸：十種風險矩陣情境與 workflow 權限、作者、政策 Check、必要 checks、換頭保護、
+  全域序列、rebase 去重、合併後關閉狀態
 
 實跑時，Flake8 PR #10 與 Vermin PR #8 都在必要 checks 通過後由 `github-actions` 核准並
-squash merge；major 的 isort PR #7 被標為人工審查，手動重跑 Gate `30194334017` 也沒有
-新增 review 或合併。PyInstaller PR #6 在發布工具例外與合併前二次判斷完成前已由第一版
-政策合併；該版本 `6.21.0` 已在本輪 Windows 候選 EXE build 實測，後續政策已將未被必要
-CI 直接覆蓋的發布／打包工具改為人工，並序列化同一 PR 的 Gate。
+squash merge。其後逐一覆核原先被舊政策擋下的 isort #7、setuptools #9、Black #11、
+pre-commit #12 與 pytest #13：五平台 CI／CodeQL 全綠，乾淨 Python 3.11 環境以指定版本
+完成 149 tests、格式／靜態檢查、Pre-commit hook 與 wheel build，五個 PR 均已 Approve、
+squash merge、關閉並刪除分支；#12、#13 也實際驗證同檔衝突後 rebase 再重跑 checks 的
+序列流程。PyInstaller 仍須以 Windows EXE build 驗證，不納入一般自動核准。
 
 ### 其他本輪修正
 
@@ -107,12 +114,13 @@ CI 直接覆蓋的發布／打包工具改為人工，並序列化同一 PR 的 
 
 | 類別 | 結果 | 證據 |
 | --- | --- | --- |
-| pytest | PASS | 149 passed |
-| black / isort / flake8 | PASS | 全部通過 |
+| pytest | PASS | 151 passed |
+| black / isort / flake8 / pre-commit | PASS | 全部通過；Pre-commit 第二遍無修改 |
+| wheel build | PASS | `setuptools 83.0.0` 建置 `yt_fetch-1.9.2-py3-none-any.whl` 成功 |
 | py_compile / vermin / CLI help | PASS | vermin 最低需求 3.8，低於專案 3.10 基線 |
 | 依賴新鮮度 | PASS | 手動觸發 run `30193431045`；`yt-dlp 2026.7.4`、`imageio-ffmpeg 0.6.0` 均為最新，無多餘 issue |
 | Dependabot 排程 | PASS | GitHub 接受 pip／Actions 設定；舊混合 PR #5 已依新分組自動關閉並拆分 |
-| Dependabot 自動判斷 | PASS | PR #8、#10 自動核准／合併；PR #7 與 Gate run `30194334017` 保持人工且未產生 review |
+| Dependabot 自動判斷 | PASS | #8、#10 由 Actions 自動核准／合併；#7、#9、#11、#12、#13 完成實際審核、Approve、合併、關閉與刪分支，#12／#13 驗證 rebase 後重跑 checks |
 | Actions 核准權限 | PASS | default workflow permissions 維持 `read`；僅開啟 `can_approve_pull_request_reviews` |
 | 本機 PyInstaller 候選 | PASS | `dist/yt_fetch.exe` 成功建置，非空 |
 | 本機候選 Windows GUI smoke | PASS | 啟動、繁中／英文切換、About 顯示 `1.9.2`／`yt-dlp 2026.7.4`、`count=0` 阻擋、正常結束 |
