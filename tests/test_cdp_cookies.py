@@ -99,11 +99,13 @@ def test_write_netscape_cookies_keeps_only_youtube_required_domains(tmp_path):
 
     assert cdp._write_netscape_cookies(cookies, out) == 3
     body = out.read_text(encoding="utf-8")
-    assert "youtube.com" in body
-    assert "accounts.google.com" in body
-    assert "googlevideo.com" in body
-    assert "example.com" not in body
-    assert "secret" not in body
+    records = [line.split("\t") for line in body.splitlines() if line and not line.startswith("#")]
+    assert {record[0].removeprefix(".") for record in records} == {
+        "youtube.com",
+        "accounts.google.com",
+        "googlevideo.com",
+    }
+    assert {record[6] for record in records} == {"yt", "google", "video"}
 
 
 def test_remote_debugging_args_bind_loopback_without_wildcard_origin():
