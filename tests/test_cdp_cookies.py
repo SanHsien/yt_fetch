@@ -56,6 +56,12 @@ def test_write_netscape_cookies_format_and_count(tmp_path):
         },
         {"domain": "", "name": "skip", "value": "1"},  # 無網域 → 跳過
         {"domain": ".x.com", "name": "", "value": "1"},  # 無名稱 → 跳過
+        {  # 其他網站的有效 cookie 也不可寫出
+            "domain": ".example.com",
+            "name": "SESSION",
+            "value": "secret",
+            "path": "/",
+        },
     ]
     n = cdp._write_netscape_cookies(cookies, out)
     assert n == 2
@@ -80,6 +86,32 @@ def test_write_netscape_cookies_format_and_count(tmp_path):
     assert pf[1] == "FALSE"  # host-only
     assert pf[3] == "FALSE"  # not secure
     assert pf[4] == "0"  # session cookie 標為 0
+
+
+def test_write_netscape_cookies_keeps_only_youtube_required_domains(tmp_path):
+    out = tmp_path / "cookies.txt"
+    cookies = [
+        {"domain": ".youtube.com", "name": "SID", "value": "yt"},
+        {"domain": "accounts.google.com", "name": "SID", "value": "google"},
+        {"domain": ".googlevideo.com", "name": "AUTH", "value": "video"},
+        {"domain": ".example.com", "name": "SESSION", "value": "secret"},
+    ]
+
+    assert cdp._write_netscape_cookies(cookies, out) == 3
+    body = out.read_text(encoding="utf-8")
+    assert "youtube.com" in body
+    assert "accounts.google.com" in body
+    assert "googlevideo.com" in body
+    assert "example.com" not in body
+    assert "secret" not in body
+
+
+def test_remote_debugging_args_bind_loopback_without_wildcard_origin():
+    args = cdp._remote_debugging_args(9222)
+
+    assert "--remote-debugging-port=9222" in args
+    assert "--remote-debugging-address=127.0.0.1" in args
+    assert not any(arg.startswith("--remote-allow-origins") for arg in args)
 
 
 def test_managed_paths_under_localappdata(tmp_path, monkeypatch):

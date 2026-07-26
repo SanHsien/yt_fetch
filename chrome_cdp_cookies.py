@@ -55,6 +55,8 @@ _BROWSER_EXES = {
     "brave": [r"{pf}\BraveSoftware\Brave-Browser\Application\brave.exe"],
 }
 
+_YOUTUBE_COOKIE_DOMAINS = ("youtube.com", "google.com", "googlevideo.com")
+
 
 def is_chromium_family(browser: str) -> bool:
     """判斷瀏覽器是否為本模組支援的 Chromium 系。"""
@@ -210,6 +212,14 @@ def _wait_devtools(port: int, timeout: float) -> Optional[str]:
     if last_err:
         logger.debug(f"等待 DevTools 端點逾時：{last_err}")
     return None
+
+
+def _remote_debugging_args(port: int) -> List[str]:
+    """只在 loopback 開放 CDP，且不接受萬用 WebSocket origin。"""
+    return [
+        f"--remote-debugging-port={port}",
+        "--remote-debugging-address=127.0.0.1",
+    ]
 
 
 # --- 極簡 WebSocket 客戶端：僅供一次性 CDP 請求/回應使用（不依賴第三方套件）---
@@ -429,7 +439,7 @@ def _graceful_close(
 
 
 def _write_netscape_cookies(cookies: List[Dict], out_path: Path) -> int:
-    """把 CDP cookie 物件寫成 Netscape 格式 cookies.txt，回傳寫入筆數。"""
+    """只把 YouTube 存取所需網域寫成 Netscape cookies.txt。"""
     lines = [
         "# Netscape HTTP Cookie File",
         "# 由 yt_fetch 透過 Chrome DevTools Protocol 產生；請勿手動編輯。",
@@ -439,6 +449,12 @@ def _write_netscape_cookies(cookies: List[Dict], out_path: Path) -> int:
     for c in cookies:
         domain = c.get("domain", "")
         if not domain:
+            continue
+        normalized_domain = domain.lstrip(".").lower()
+        if not any(
+            normalized_domain == allowed or normalized_domain.endswith(f".{allowed}")
+            for allowed in _YOUTUBE_COOKIE_DOMAINS
+        ):
             continue
         include_sub = "TRUE" if domain.startswith(".") else "FALSE"
         path = c.get("path", "/") or "/"
@@ -501,8 +517,7 @@ def export_cookies_via_cdp(
             str(exe),
             f"--user-data-dir={staging}",
             f"--profile-directory={profile}",
-            f"--remote-debugging-port={port}",
-            "--remote-allow-origins=*",
+            *_remote_debugging_args(port),
             "--no-first-run",
             "--no-default-browser-check",
             "--disable-extensions",
@@ -610,8 +625,7 @@ def _launch_managed(
     cmd = [
         str(exe),
         f"--user-data-dir={data_dir}",
-        f"--remote-debugging-port={port}",
-        "--remote-allow-origins=*",
+        *_remote_debugging_args(port),
         "--no-first-run",
         "--no-default-browser-check",
         "--disable-sync",
