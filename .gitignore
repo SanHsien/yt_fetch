@@ -21,14 +21,8 @@ env/
 *.swo
 *~
 
-# 下載的影片檔案（不提交到 Git）
-download/*.mp4
-download/*.webm
-download/*.mkv
-download/*.m4a
-
-# 下載記錄檔案（包含已下載的影片 ID）
-download/.download_archive.txt
+# 下載產物（影片、字幕、報告、archive 與頻道子目錄皆不提交）
+download/
 
 # 系統檔案
 .DS_Store

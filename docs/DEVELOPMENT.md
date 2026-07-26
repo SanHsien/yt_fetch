@@ -67,7 +67,7 @@ python yt_fetch.py --channel "@channel_handle" --count 1 --sleep 2 --ratelimit 3
 GitHub Actions 會檢查：
 
 - Python 3.10、3.11、3.12。
-- `python -m py_compile yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/generate_readme_screenshot.py tools/check_dependency_freshness.py`。
+- `python -m py_compile yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/generate_readme_screenshot.py tools/check_dependency_freshness.py tools/verify_release_zip.py`。
 - `pytest`。
 - vermin 最低版本相容性檢查（`Minimum required versions` 不得高於 3.10）。
 - `black --check yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/`。

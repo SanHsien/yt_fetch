@@ -2,6 +2,8 @@ import importlib
 import sys
 import types
 
+import pytest
+
 
 def test_import_module():
     """模組可被匯入（基本 smoke test）"""
@@ -496,6 +498,26 @@ def test_parse_args_advanced_filters(monkeypatch):
     assert args.max_duration == 1800
     assert args.write_subs is True
     assert args.sub_langs == "zh-Hant,en"
+
+
+@pytest.mark.parametrize(
+    "option,value",
+    [
+        ("--retries", "0"),
+        ("--retries", "-1"),
+        ("--ratelimit", "-1"),
+        ("--sleep", "-1"),
+    ],
+)
+def test_parse_args_rejects_invalid_runtime_controls(monkeypatch, option, value):
+    import yt_fetch
+
+    monkeypatch.setattr("sys.argv", ["yt_fetch.py", "--channel", "@example", option, value])
+
+    with pytest.raises(SystemExit) as exc:
+        yt_fetch.parse_args()
+
+    assert exc.value.code == 2
 
 
 def test_set_download_dir(tmp_path, monkeypatch):

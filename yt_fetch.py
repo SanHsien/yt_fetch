@@ -1405,6 +1405,12 @@ def parse_args():
 
     if args.count < 1:
         parser.error("--count 必須大於 0")
+    if args.retries < 1:
+        parser.error("--retries 必須大於 0")
+    if args.ratelimit < 0:
+        parser.error("--ratelimit 不可為負數")
+    if args.sleep < 0:
+        parser.error("--sleep 不可為負數")
     if args.quality not in QUALITY_CHOICES:
         parser.error(f"--quality 必須是：{', '.join(QUALITY_CHOICES)}")
     try:

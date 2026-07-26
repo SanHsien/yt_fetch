@@ -64,6 +64,7 @@ jobs:
         python -m py_compile build_exe.py
         python -m py_compile tools/generate_readme_screenshot.py
         python -m py_compile tools/check_dependency_freshness.py
+        python -m py_compile tools/verify_release_zip.py
         echo "✓ 語法檢查通過"
     
     - name: 檢查檔案結構

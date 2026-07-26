@@ -37,7 +37,8 @@ git rev-parse origin/main
 .venv\Scripts\python -m black --check yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
 .venv\Scripts\python -m isort --check-only yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
 .venv\Scripts\python -m flake8 yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
-.venv\Scripts\python -m py_compile yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools\generate_readme_screenshot.py tools\check_dependency_freshness.py
+.venv\Scripts\python -m py_compile yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools\generate_readme_screenshot.py tools\check_dependency_freshness.py tools\verify_release_zip.py
+.venv\Scripts\vermin --eval-annotations --no-tips yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/
 .venv\Scripts\python yt_fetch.py --help
 ```
 
@@ -48,27 +49,32 @@ git rev-parse origin/main
 Release 驗收只能針對 GitHub 下載的資產，不得用 repo 的 `dist/` 代替。以 `vX.Y.Z` 為例：
 
 ```powershell
-$VerifyRoot = Join-Path $env:TEMP "yt-fetch-release-verify-vX.Y.Z"
-New-Item -ItemType Directory -Force -Path $VerifyRoot | Out-Null
+$ValidationNonce = [Guid]::NewGuid().ToString("N")
+$VerifyRoot = Join-Path $env:TEMP "yt-fetch-release-verify-vX.Y.Z-$ValidationNonce"
+New-Item -ItemType Directory -Path $VerifyRoot | Out-Null
 
 gh release download vX.Y.Z -R SanHsien/yt_fetch `
   -p "yt_fetch-vX.Y.Z-windows-x64.zip" `
   -p "yt_fetch-vX.Y.Z-windows-x64.zip.sha256" `
-  -D $VerifyRoot --clobber
+  -D $VerifyRoot
 
 $Zip = Join-Path $VerifyRoot "yt_fetch-vX.Y.Z-windows-x64.zip"
 $Expected = ((Get-Content "$Zip.sha256" -Raw) -split "\s+")[0].ToLowerInvariant()
 $Actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $Zip).Hash.ToLowerInvariant()
 if ($Actual -ne $Expected) { throw "SHA-256 mismatch" }
 
+.venv\Scripts\python tools\verify_release_zip.py $Zip
+
 $Extract = Join-Path $VerifyRoot "expanded"
 Expand-Archive -LiteralPath $Zip -DestinationPath $Extract
-Get-ChildItem -LiteralPath $Extract -Recurse -File | Select-Object FullName, Length
+Get-ChildItem -LiteralPath $Extract -Recurse -File | Select-Object Name, Length
 ```
 
-ZIP 無法讀取、SHA-256 不符、Windows 內建 `Expand-Archive` 失敗，或找不到唯一的
-`yt_fetch.exe` 時，Release 為 `FAIL`。驗收結束後，確認暫存資料夾僅含可安全刪除的
-公開測試產物；刪除由維護者當輪確認後處理。
+獨立驗證工具會檢查 CRC、危險或重複路徑、唯一且位於根目錄的非空
+`yt_fetch.exe`。ZIP 無法讀取、SHA-256 不符、工具驗證失敗或 Windows 內建
+`Expand-Archive` 失敗時，Release 為 `FAIL`。每次使用唯一暫存目錄，避免舊檔案讓結果
+誤判為成功。驗收結束後，確認暫存資料夾僅含可安全刪除的公開測試產物；刪除由維護者
+當輪確認後處理。
 
 ## 三、無帳號桌面 smoke（代理可執行）
 
@@ -127,7 +133,7 @@ sleep = 2 seconds
 | 項目 | 結果 | 非敏感證據或阻塞原因 |
 | --- | --- | --- |
 | pytest / style / compile / help | PASS/FAIL | <版本與摘要> |
-| Release SHA-256 / Expand-Archive | PASS/FAIL | <檔名與 sha 前 12 碼> |
+| Release SHA-256 / ZIP CRC 與版面 / Expand-Archive | PASS/FAIL | <檔名與 sha 前 12 碼> |
 | GUI 無帳號 smoke | PASS/FAIL | <觀察摘要> |
 | 公開頻道單支下載與冪等 | PASS/FAIL/BLOCKED | <不含頻道帳號資訊的摘要> |
 | 已授權內容 | PASS/FAIL/BLOCKED | <只記授權狀態與結果> |
