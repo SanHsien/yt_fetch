@@ -6,7 +6,7 @@
 
 | 版本 | 支援狀態          |
 | ---- | ----------------- |
-| 1.7.x（最新版） | :white_check_mark: 支援 |
+| 1.9.x（最新版） | :white_check_mark: 支援 |
 | < 1.7 | :x: 請更新到最新版 |
 
 ## 回報安全漏洞
@@ -57,7 +57,8 @@
 - 本工具下載公開影片，或在登入後下載你自己有權觀看的內容（含自己付費／訂閱的會員影片）
 - 不支援「繞過」付費牆或存取你無權觀看的訂閱者專屬內容（以你自己的帳號權限觀看你有權看的內容不算繞過）
 - Cookies 可由你手動提供（`--cookies` / `--cookies-from-browser`），或用內建「登入 YouTube」於本機取得；
-  取得的 cookies 只存於你本機（`%LOCALAPPDATA%\yt_fetch\cookies.txt`）、僅供你自己的下載使用、絕不外傳
+  取得的 cookies 只存於你本機（`%LOCALAPPDATA%\yt_fetch\cookies.txt`）、僅供你自己的下載使用、絕不外傳；
+  受控 Chrome 只在 `127.0.0.1` 開啟遠端偵錯，並只匯出 YouTube 登入所需網域的 cookies
 
 ## 致謝
 

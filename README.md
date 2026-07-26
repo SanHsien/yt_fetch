@@ -3,6 +3,7 @@
 [English](README.en.md)
 
 [![程式碼檢查](https://github.com/SanHsien/yt_fetch/actions/workflows/code-check.yml/badge.svg?branch=main)](https://github.com/SanHsien/yt_fetch/actions/workflows/code-check.yml)
+[![CodeQL](https://github.com/SanHsien/yt_fetch/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/SanHsien/yt_fetch/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/SanHsien/yt_fetch?sort=semver&display_name=tag)](https://github.com/SanHsien/yt_fetch/releases)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#)
@@ -194,6 +195,10 @@ python yt_fetch.py --channel "@channel_handle"
 
 為此本工具提供「**受控瀏覽器登入**」：它會開啟一個**本工具專屬、與你日常 Chrome 完全獨立**的瀏覽器實例，讓你在裡面登入 YouTube，再透過 Chrome DevTools Protocol 取得「**Chrome 自己解密後**」的 cookies。整個過程不需要關閉你平常的 Chrome、不觸碰你的主要設定檔。
 
+受控瀏覽器的遠端偵錯介面只監聽本機 `127.0.0.1`；匯出的 cookies 也只保留
+YouTube 登入所需的 `youtube.com`、`google.com` 與 `googlevideo.com` 網域，不會把其他網站的
+瀏覽 cookies 寫入本工具的 `cookies.txt`。
+
 使用方式（擇一）：
 
 - **GUI**：點主畫面的「**登入 YouTube 取得 cookies**」按鈕，在彈出的視窗登入即可。
@@ -319,6 +324,9 @@ python yt_fetch.py --channels-file my_channels.txt --count 5
 - **完整 URL**：`https://www.youtube.com/@channel_handle`
 - **頻道 ID**：`UCxxxxxxxxxxxxxxxxxxxxxx`
 - **頻道 URL**：`https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx`
+
+完整網址只接受 HTTPS 的 YouTube 主機（含 `youtu.be`）；HTTP、其他網站、內嵌帳密或非標準
+連接埠會直接拒絕。
 
 ### 使用範例
 
@@ -447,15 +455,15 @@ sudo dnf install ffmpeg
 
 ### Q: 為什麼有些影片沒有下載？
 
-**A:** 本工具僅下載「可公開觀看的 VOD」，會自動跳過：
+**A:** 未提供 cookies 時，本工具只下載「可公開觀看的 VOD」。提供自己的合法 cookies 後，
+會員／Premium／需登入候選會交由 YouTube 伺服器驗證帳號原有權限；未授權仍會被拒絕。
+本工具一律跳過：
 - 私人影片
 - 未列出影片
-- 訂閱者專屬影片
-- Premium 專屬影片
-- 需要認證的影片
 - 直播中（live）、預告（upcoming）、已結束直播（was_live）等 Live 內容
 
-這是為了確保只下載合法可存取、且非直播的公開內容。
+沒有 cookies 時也會跳過訂閱者專屬、Premium 專屬與需要認證的影片。這個流程只保留
+「使用者本來就有權觀看」的已授權存取，不繞過任何限制。
 
 ### Q: 下載失敗或網路錯誤？
 
@@ -552,7 +560,7 @@ python yt_fetch.py --channel "@channel" --retries 5
 
 ## 技術細節
 
-- **依賴套件**：yt-dlp>=2026.6.9、imageio-ffmpeg>=0.6.0
+- **依賴套件**：yt-dlp>=2026.7.4、imageio-ffmpeg>=0.6.0
 - **Python 版本**：3.10+
 - **虛擬環境**：自動建立 `.venv`
 - **CLI 指令**：`pip install -e .` 後可使用 `yt-fetch`

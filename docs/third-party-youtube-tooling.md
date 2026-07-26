@@ -29,6 +29,8 @@
 
 - cookies 只供使用者存取自己有權存取的內容（含使用者自己付費／訂閱的會員影片，屬已授權存取、非繞過）。
 - 不在日誌或輸出中列印 cookies 內容；取得的 cookies 只存於本機、不提交至版本控制、不外傳。
+- 受控 Chrome 的 CDP 只監聽 `127.0.0.1`；匯出只保留 `youtube.com`、`google.com` 與
+  `googlevideo.com` 網域，不寫入其他網站 cookies。
 - 不提供偷取、破解或外傳他人 cookies 的流程。
 - 不以 cookies 功能鼓勵下載使用者「無權存取」的內容。
 

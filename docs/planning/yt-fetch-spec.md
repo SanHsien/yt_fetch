@@ -35,7 +35,8 @@
 ### 下載核心
 
 - 從 YouTube 頻道下載指定數量的最新影片。
-- 支援 `@handle`、頻道 ID、完整 URL、`/videos`、`/shorts` 與 playlist URL。
+- 支援 `@handle`、頻道 ID、HTTPS YouTube URL、`/videos`、`/shorts` 與 playlist URL；
+  拒絕 HTTP、外部主機、內嵌帳密與非標準連接埠。
 - 預設排除 Shorts，可用 `--include-shorts` 包含。
 - 排除 live、upcoming、was_live 等直播與預告項目。
 - 支援 `best`、`1080p`、`720p`、`480p` 下載畫質。
@@ -43,7 +44,8 @@
 - 可選擇同時下載字幕／自動字幕。
 - 使用 ffmpeg 合併影片與音訊，輸出 MP4。
 - 以 yt-dlp archive 與檔名 video id 避免重複下載。
-- 清單擷取採 flat extraction，下載階段處理權限與實際可下載性；失敗候選會往後補。
+- 清單擷取採 flat extraction；沒有 cookies 時只保留公開候選，有合法 cookies 時由 YouTube
+  驗證會員／Premium／需登入候選的帳號權限；失敗候選會往後補。
 
 ### GUI
 
@@ -61,6 +63,7 @@
 - CLI 保留 `--cookies-from-browser` 與 `--cookies`，供進階使用。
 - Windows/Chrome 以受控瀏覽器登入解決 Chrome 127+ App-Bound Encryption。
 - 受控 cookies 保存於本機 `%LOCALAPPDATA%\yt_fetch\cookies.txt`。
+- 受控 Chrome 的 CDP 只監聽 `127.0.0.1`，且只匯出 YouTube 登入所需網域的 cookies。
 - GUI 不提供手動 cookies 欄位，避免一般使用者混淆；需要登入時按登入按鈕。
 - 設定檔不保存 cookies。
 
@@ -153,6 +156,6 @@ EXE 模式下，`download/` 建在 EXE 所在目錄旁；原始碼模式下，�
 
 這些項目只有在需求明確、且不破壞 GUI 簡潔度與專案邊界時才會加入。
 
-**文件版本**：1.9.1
-**最後更新**：2026-07-04
+**文件版本**：1.9.2
+**最後更新**：2026-07-26
 **維護者**：San-Hsien

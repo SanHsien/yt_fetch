@@ -7,14 +7,33 @@
 
 ## [未發布]
 
+## [1.9.2] - 2026-07-26
+
 ### 修正
 - 完整排除 `download/` 及其頻道子目錄，避免影片、字幕、報告或下載紀錄誤入 Git。
 - CLI 拒絕小於 1 的重試次數，以及負數速率限制與等待秒數。
+- 修正使用合法 cookies 時，會員／Premium／需登入候選會在 yt-dlp 驗證帳號資格前遭提早
+  排除的問題；私人與未列出影片仍一律拒絕，cookies 載入失敗回退公開模式時也會立即恢復
+  公開內容過濾。
+- 頻道 URL 只接受 HTTPS YouTube 主機，拒絕 HTTP、外部主機、內嵌帳密與非標準連接埠。
+- 排除依賴新鮮度工具產生的 Markdown 報告，避免本機維護產物誤入 Git。
+
+### 安全
+- 受控 Chrome 的 CDP 只監聽 `127.0.0.1`，移除萬用 remote origin。
+- cookies 匯出只保留 YouTube 登入所需的 `youtube.com`、`google.com` 與
+  `googlevideo.com` 網域，不再寫入其他瀏覽紀錄。
+- 新增 Python CodeQL `security-extended` 掃描，建立可在 GitHub 留存的 SAST 基線。
+
+### 依賴
+- 將 `yt-dlp` 最低版本更新至 `2026.7.4`。
+- Release workflow 更新至 `actions/upload-artifact@v7` 與
+  `softprops/action-gh-release@v3`。
 
 ### 驗證
 - 新增 Release ZIP 驗證工具與測試，檢查 CRC、危險／重複路徑、唯一根目錄 EXE 與非空內容。
 - Windows 實機驗收改用每次唯一的暫存目錄，並納入 ZIP 版面與 Python 3.10 相容性檢查。
 - GitHub Actions 升級至 Node.js 24 runtime 的 `checkout`／`setup-python` v7。
+- 補上 URL 邊界、已授權候選、cookies fallback、CDP 監聽與 cookies 網域最小化的回歸測試。
 
 ## [1.9.1] - 2026-07-04
 
@@ -332,7 +351,8 @@
 - **次版本號**：向下相容的功能新增
 - **修訂號**：向下相容的問題修正
 
-[未發布]: https://github.com/SanHsien/yt_fetch/compare/v1.9.1...HEAD
+[未發布]: https://github.com/SanHsien/yt_fetch/compare/v1.9.2...HEAD
+[1.9.2]: https://github.com/SanHsien/yt_fetch/compare/v1.9.1...v1.9.2
 [1.9.1]: https://github.com/SanHsien/yt_fetch/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/SanHsien/yt_fetch/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/SanHsien/yt_fetch/compare/v1.7.2...v1.8.0

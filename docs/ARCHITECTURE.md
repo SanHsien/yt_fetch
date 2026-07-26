@@ -8,7 +8,7 @@
 | --- | --- |
 | `yt_fetch.py` | CLI、環境檢查、ffmpeg 檢查、頻道 URL 正規化、影片篩選、下載流程 |
 | `yt_fetch_gui.py` | Tkinter 桌面介面（薄層，`import yt_fetch` 重用核心；背景執行緒下載） |
-| `chrome_cdp_cookies.py` | 受控瀏覽器登入與 CDP cookies 擷取（解決 Chrome 127+ App-Bound Encryption；Windows） |
+| `chrome_cdp_cookies.py` | 受控瀏覽器登入與 CDP cookies 擷取（CDP 限本機 loopback、只匯出 YouTube 登入所需網域；Windows） |
 | `yt_fetch.spec` / `build_exe.py` | PyInstaller 打包設定與一鍵建置腳本（產出 `dist/yt_fetch.exe`） |
 | `tools/generate_readme_screenshot.py` | 產生 README 用的 GUI 截圖 |
 | `tools/check_dependency_freshness.py` | 檢查 `yt-dlp` / `imageio-ffmpeg` 是否落後 PyPI（供每月排程與本地使用） |
@@ -17,6 +17,7 @@
 | `README.md` | 使用者操作說明 |
 | `CONTRIBUTING.md` | 貢獻流程與本地檢查指令 |
 | `.github/workflows/code-check.yml` | GitHub Actions 驗證 |
+| `.github/workflows/codeql.yml` | Python CodeQL `security-extended` 程式碼掃描 |
 
 ## 執行流程
 
@@ -24,9 +25,10 @@
 2. `ensure_venv_and_restart()` 確認虛擬環境與必要套件。
 3. `parse_args()` 解析 CLI 參數。
 4. 參數不足時，`prompt_user_input()` 改用互動輸入。
-5. `normalize_channel_url()` 將輸入轉為 YouTube videos 頁面。
+5. `normalize_channel_url()` 驗證 HTTPS YouTube host，並將輸入轉為 YouTube videos 頁面。
 6. `check_ffmpeg()` / `install_ffmpeg()` 確保可合併最佳影音格式。
-7. `download_videos()` 使用 `yt-dlp` 擷取影片列表、過濾非公開內容與 Shorts，依畫質選項下載目標數量。
+7. `download_videos()` 使用 `yt-dlp` 擷取影片列表、過濾非公開內容與 Shorts；有合法 cookies
+   時保留需登入候選給 YouTube 驗證帳號權限，再依畫質選項下載目標數量。
 8. `get_downloaded_ids()` 讀取 archive 與既有檔名，避免重複下載。
 
 ## 可測試的純函式
@@ -35,7 +37,7 @@
 
 | 函式 | 責任 |
 | --- | --- |
-| `normalize_channel_url()` | 將 URL / 頻道 ID / `@handle` 正規化 |
+| `normalize_channel_url()` | 驗證 HTTPS YouTube host，將 URL / 頻道 ID / `@handle` 正規化 |
 | `build_channel_urls()` | 依是否含 Shorts 組出要提取的分頁 URL 清單 |
 | `filter_reason()` | yt-dlp `match_filter` 的判斷（非公開、Shorts） |
 | `is_public_video()` | 判斷影片是否公開 |

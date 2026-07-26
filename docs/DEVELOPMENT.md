@@ -73,6 +73,7 @@ GitHub Actions 會檢查：
 - `black --check yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/`。
 - `isort --check-only yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/`。
 - `flake8 yt_fetch.py yt_fetch_gui.py chrome_cdp_cookies.py build_exe.py tools/ tests/`。
+- 獨立的 Python CodeQL `security-extended` workflow 會在 push、PR 與每週排程建立 SAST 基線。
 
 本機若使用 Python 3.14，可能比 CI 更嚴格。遇到 packaging 或工具相容問題時，以 CI 支援版本與專案 `pyproject.toml` 為準。
 

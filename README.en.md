@@ -3,6 +3,7 @@
 [**English**](README.en.md) | [繁體中文](README.md)
 
 [![Code Check](https://github.com/SanHsien/yt_fetch/actions/workflows/code-check.yml/badge.svg?branch=main)](https://github.com/SanHsien/yt_fetch/actions/workflows/code-check.yml)
+[![CodeQL](https://github.com/SanHsien/yt_fetch/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/SanHsien/yt_fetch/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/SanHsien/yt_fetch?sort=semver&display_name=tag)](https://github.com/SanHsien/yt_fetch/releases)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#)
@@ -201,6 +202,10 @@ Since **Chrome 127**, Google enabled **App-Bound Encryption (ABE)**: the cookie 
 
 To solve this, the tool offers a **managed-browser sign-in**: it launches a browser instance that is **dedicated to this tool and fully separate from your everyday Chrome**, lets you sign in to YouTube there, and then retrieves the cookies that **Chrome itself has already decrypted** via the Chrome DevTools Protocol. You do not need to close your normal Chrome, and your main profile is never touched.
 
+The remote-debugging endpoint only listens on local `127.0.0.1`. Exported cookies are limited to
+the `youtube.com`, `google.com`, and `googlevideo.com` domains needed for YouTube sign-in, so
+cookies from unrelated sites are not written to this tool's `cookies.txt`.
+
 How to use it (either one):
 
 - **GUI**: click the **"Sign in to YouTube for cookies"** button on the main screen and sign in in the pop-up window.
@@ -328,6 +333,9 @@ The tool supports several channel identifier formats:
 - **Full URL**: `https://www.youtube.com/@channel_handle`
 - **Channel ID**: `UCxxxxxxxxxxxxxxxxxxxxxx`
 - **Channel URL**: `https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx`
+
+Full URLs must use HTTPS and an approved YouTube host (including `youtu.be`). HTTP URLs, other
+sites, embedded credentials, and non-standard ports are rejected.
 
 ### Examples
 
@@ -457,16 +465,17 @@ sudo dnf install ffmpeg
 
 ### Q: Why are some videos not downloaded?
 
-**A:** This tool only downloads publicly viewable VOD videos. It automatically skips:
+**A:** Without cookies, the tool only downloads publicly viewable VOD videos. With your own
+authorized cookies, membership, Premium, and sign-in-required candidates are passed to YouTube,
+which verifies the account's existing entitlement; unauthorized access is still denied. The tool
+always skips:
 
 - Private videos.
 - Unlisted videos.
-- Subscriber-only videos.
-- Premium-only videos.
-- Videos that require authentication.
 - Live streams, upcoming streams, finished live-stream entries, and other Live content.
 
-This ensures the tool only downloads legally accessible, non-live public content.
+Without cookies it also skips subscriber-only, Premium-only, and sign-in-required entries. This
+only enables content you were already entitled to view; it does not bypass access controls.
 
 ### Q: Downloads fail or network errors occur. What should I do?
 
@@ -567,7 +576,7 @@ Users are solely responsible for all use of this tool.
 
 ## Technical Details
 
-- **Dependencies**: yt-dlp>=2026.6.9, imageio-ffmpeg>=0.6.0.
+- **Dependencies**: yt-dlp>=2026.7.4, imageio-ffmpeg>=0.6.0.
 - **Python version**: 3.10+.
 - **Virtual environment**: automatically creates `.venv`.
 - **CLI command**: `yt-fetch` is available after `pip install -e .`.

@@ -120,10 +120,27 @@ sleep = 2 seconds
 | 批次頻道檔 | 修改批次流程時 | 公開測試清單逐一循序處理；單一失敗不阻斷其他列。 |
 | 字幕 | 修改字幕選項時 | 有提供字幕的公開測試影片產生預期語言檔；無字幕時正常完成。 |
 | ffmpeg | 修改格式或 ffmpeg 偵測時 | 狀態頁正確顯示目前來源；不為測試而改動系統 PATH。 |
-| cookies／受控登入 | 修改 `chrome_cdp_cookies.py` 時 | 使用者親自完成登入；公開影片、已授權內容與無權內容分別記錄。 |
+| cookies／受控登入 | 修改 `chrome_cdp_cookies.py` 時 | 使用者親自完成登入；Chrome 命令列只含 `--remote-debugging-address=127.0.0.1` 且不含萬用 origin；公開影片、已授權內容與無權內容分別記錄。 |
 | 新版 Release | 每個 `v*` tag | 本文件第一至四節均為 PASS，或清楚列出 BLOCKED 與原因。 |
 
 任何含外部服務、登入、實際檔案下載、刪除下載產物或發佈 Release 的動作，都必須有本輪明確授權；不可從過往驗收推定授權。
+
+受控登入成功後，cookies 網域範圍由使用者在本機執行下列只輸出 PASS／FAIL 的檢查；代理不得
+開啟或截圖 `cookies.txt`，也不得輸出 cookie 名稱、值或帳號資訊：
+
+```powershell
+$Allowed = @("youtube.com", "google.com", "googlevideo.com")
+$CookiePath = Join-Path $env:LOCALAPPDATA "yt_fetch\cookies.txt"
+$Unexpected = Get-Content -LiteralPath $CookiePath |
+  Where-Object { $_ -and -not $_.StartsWith("#") } |
+  ForEach-Object { ($_ -split "`t")[0].TrimStart(".").ToLowerInvariant() } |
+  Where-Object {
+    $Domain = $_
+    -not ($Allowed | Where-Object { $Domain -eq $_ -or $Domain.EndsWith(".$_") })
+  } |
+  Select-Object -First 1
+if ($Unexpected) { "FAIL" } else { "PASS" }
+```
 
 ## 驗收紀錄模板
 

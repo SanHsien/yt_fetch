@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yt-fetch"
-version = "1.9.1"
+version = "1.9.2"
 description = "輕巧的 YouTube 頻道影片下載工具，支援 GUI、批次下載、登入 cookies 與畫質選項"
 readme = "README.md"
 requires-python = ">=3.10"

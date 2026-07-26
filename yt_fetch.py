@@ -62,7 +62,7 @@ ARCHIVE_FILE = DOWNLOAD_DIR / ".download_archive.txt"
 
 # 版本與專案資訊（供 GUI「關於」與「檢查更新」使用）。
 # 註：版本號以此為準，發布時與 pyproject.toml 同步（見 docs/RELEASING.md）。
-__version__ = "1.9.1"
+__version__ = "1.9.2"
 GITHUB_REPO = "SanHsien/yt_fetch"
 RELEASES_URL = f"https://github.com/{GITHUB_REPO}/releases"
 QUALITY_CHOICES = ("best", "1080p", "720p", "480p")

@@ -14,7 +14,8 @@
 ### 下載核心
 
 - 從指定 YouTube 頻道下載最新 N 支影片。
-- 支援 `@handle`、頻道 ID、完整 URL、`/videos`、`/shorts` 與 playlist URL 正規化。
+- 支援 `@handle`、頻道 ID、HTTPS YouTube URL、`/videos`、`/shorts` 與 playlist URL 正規化；
+  拒絕 HTTP、外部主機、內嵌帳密與非標準連接埠。
 - 以 yt-dlp 擷取清單與下載，強制使用 watch URL 下載，降低 m3u8 與清單 URL 誤用問題。
 - 支援 `best`、`1080p`、`720p`、`480p` 畫質選項，解析度選項會選擇不高於上限的最佳可用畫質。
 - 使用 ffmpeg 合併影片與音訊；EXE 內可使用 `imageio-ffmpeg` 提供的 ffmpeg。
@@ -26,7 +27,9 @@
 - 排除 live、upcoming、was_live 等直播／預告／直播回放項目。
 - 以 yt-dlp archive 與檔名中的 video id 避免重複下載。
 - `--count` 以單一頻道為單位計算，不會被其他頻道已下載項目影響。
-- 清單改用 flat extraction，下載階段再處理會員限定、私人、權限與實際可下載性；失敗項目會往後補候選直到達到目標或候選耗盡。
+- 清單改用 flat extraction；沒有 cookies 時只保留公開候選，有合法 cookies 時把會員／Premium／
+  需登入候選交由 YouTube 驗證帳號資格。私人與未列出影片一律拒絕；失敗項目會往後補候選直到
+  達到目標或候選耗盡。
 
 ### GUI 與 EXE
 
@@ -42,6 +45,7 @@
 - Windows/Chrome 支援受控瀏覽器登入，解決 Chrome 127+ App-Bound Encryption 導致外部工具不能直接讀取 cookies 的問題。
 - GUI 以「登入 YouTube 取得 cookies」按鈕處理登入，不顯示手動 cookies 欄位。
 - 設定檔不保存 cookies 路徑、瀏覽器來源或 cookies 內容。
+- 受控 Chrome 只在 `127.0.0.1` 開啟 CDP，匯出也只保留 YouTube 登入所需網域。
 
 ### 批次、設定與維護
 
@@ -56,6 +60,7 @@
 - 測試涵蓋 URL 正規化、過濾、archive、頻道目標計算、批次報表、GUI 表單解析、受控 cookies 模組、依賴新鮮度與下載流程 helper。
 - 本地驗證鏈為 `pytest`、`black --check`、`isort --check-only`、`flake8`、`py_compile`、`yt_fetch.py --help`。
 - CI 覆蓋 Ubuntu、Windows、macOS 與多個 Python 版本。
+- CodeQL `security-extended` 在 push、PR 與每週排程建立 Python SAST 基線。
 
 ## 已收斂的原 planning 項目
 
@@ -99,6 +104,6 @@
 - 維護性重構：主要項目完成。
 - 剩餘項目：僅保留「可選但非優先」或「暫不納入」分類。
 
-**文件版本**：1.9.1
-**最後更新**：2026-07-04
-**比對基準**：目前 `main` 分支與 v1.9.1 發行準備
+**文件版本**：1.9.2
+**最後更新**：2026-07-26
+**比對基準**：目前 `main` 分支與 v1.9.2 發行準備

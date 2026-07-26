@@ -14,7 +14,7 @@
 - GUI：`yt_fetch_gui.py`（`--gui` 或 `yt-fetch-gui`）
 - 打包：`yt_fetch.spec` + `build_exe.py`；CI `.github/workflows/release.yml`（v* 標籤觸發）
 - 測試：`tests/`（`test_smoke.py`、`test_gui.py`、`test_cdp_cookies.py`、
-  `test_dependency_freshness.py`、`conftest.py`）
+  `test_dependency_freshness.py`、`test_release_zip.py`、`test_repository_hygiene.py`、`conftest.py`）
 - 文件：`README.md` / `README.en.md`、`docs/ARCHITECTURE.md`、`docs/DEVELOPMENT.md`、
   `docs/RELEASING.md`、`docs/COMPUTER_USE_VALIDATION.md`、`docs/screenshot-workflow.md`、
   `docs/planning/`
@@ -27,10 +27,9 @@
 - ✅ 設定檔 `yt_fetch.ini`（configparser）：優先序 CLI > 環境變數 > ini > 內建；**不保存 cookies**。
 - ✅ 多頻道批次下載 `--channels-file`（單一失敗不中斷整批）＋結果報表。
 - ✅ 可測化：抽出 `build_channel_urls`、`filter_downloadable_entries`、`find_downloaded_file`、
-  `filter_reason`、`is_non_public` 等純函式；目前測試數為 102。
+  `filter_reason`、`is_non_public` 等純函式；目前測試數為 136。
 - ✅ UX：`--help` 乾淨輸出、env 數字防呆、Ctrl+C 乾淨退出、cookies 安全提醒。
-- ✅ 跨平台 CI（Ubuntu/Windows/macOS）＋ console script 與 `--help` smoke。
-- ✅ v1.9.1 GitHub Release 已發布；Windows zip 與 `.sha256` 可從 GitHub Release 下載驗證。
+- ✅ 跨平台 CI（Ubuntu/Windows/macOS）＋ console script、`--help` smoke 與 Python CodeQL。
 - ✅ 正確性修正：`--count` 以頻道計、Shorts 不誤殺正常短片、下載偵測 glob bug。
 - ✅ v1.4.0：受控瀏覽器登入取得 cookies（解決 Chrome 127+ App-Bound Encryption，
   `chrome_cdp_cookies` 模組 + `--login` + GUI 登入按鈕）；GUI 移除手動 cookies 欄位、
@@ -50,8 +49,11 @@
   README 中英文與 planning 文件同步。
 - ✅ v1.9.1：GUI layout patch。預設啟動最大化、改為左右工作區，並修正字幕勾選項與登入
   cookies 說明文字在預設畫面中的截斷／不自然換行。
+- ✅ v1.9.2：只接受 HTTPS YouTube URL；修正合法 cookies 下會員／Premium／需登入候選遭
+  提早排除；受控 Chrome 限 loopback 並縮小 cookies 網域；更新 `yt-dlp` 至 `2026.7.4`，
+  補上 CodeQL 與新版 Release Actions。
 
-當前版本：`1.9.1`（pyproject、__version__ 與 CHANGELOG 同步；發布標籤為 `v1.9.1`）。
+當前版本：`1.9.2`（pyproject、__version__ 與 CHANGELOG 同步；發布標籤為 `v1.9.2`）。
 
 ## 已知注意事項
 
