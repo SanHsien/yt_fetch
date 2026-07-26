@@ -25,6 +25,8 @@
   覆寫；追蹤依賴恢復最新且沒有 open PR 才關閉。
 - Guarded merge 每次觸發都重新掃描 auto-merge label queue，避免 GitHub concurrency
   取消較舊 pending event 時漏掉已完成 checks 的 PR。
+- 人工審查型 Dependabot PR 的 opened／reopened／synchronize／ready-for-review／closed
+  事件也會即時同步 freshness tracker，不必等人工合併或月排程。
 
 ## [1.9.2] - 2026-07-26
 

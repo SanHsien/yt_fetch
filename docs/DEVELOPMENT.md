@@ -81,7 +81,8 @@ GitHub Actions 會檢查：
 - Dependabot PR 會由 `dependabot-review.yml` 判斷變更是否被必要 CI 直接覆蓋；核可後由
   `dependabot-merge.yml` 等五平台 CI、Pre-commit、wheel build 與 CodeQL 全數成功，再自動
   Approve，並透過全域序列在必要時 rebase，再 squash merge、關閉 PR 並刪除分支。自動
-  合併會 explicit dispatch freshness；人工合併或直接更新 manifest 由 `main` push 重驗。
+  合併會 explicit dispatch freshness；Dependabot PR opened／reopened／synchronize／
+  ready-for-review／closed 也會同步 tracker，人工合併或直接更新 manifest 由 `main` push 重驗。
   固定 reopen／更新並指派同一個維護 issue；追蹤依賴最新且無 open Dependabot PR 才關閉。
   Merge workflow 每次觸發都重掃 auto-merge labels 並按 PR number 取最前一筆，避免
   GitHub concurrency 取消較舊 pending event 時漏掉已完成 checks 的 PR。

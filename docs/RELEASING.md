@@ -75,7 +75,8 @@ git push origin vX.Y.Z
   - `pip`：全部 Python 執行期、開發與建置依賴；以 `increase` 策略推進 `>=` 最低版本。
   - `github-actions`：所有 workflow 使用的 Actions。
   - 開發／建置依賴依 patch／minor 與 major 分組，讓每個 PR 的風險與失敗原因可獨立判斷。
-  - PR 開啟或更新後，由受信任的 base policy 分類變更範圍與可驗證性。
+  - PR opened／reopened／synchronize／ready-for-review／closed 都會先同步 freshness；
+    開啟或更新後再由受信任的 base policy 分類變更範圍與可驗證性。
   - 政策核可的 PR 等待五平台 CI、Pre-commit、wheel build 與 CodeQL 全數成功。
   - Gate 再次核對作者、base、head SHA、政策 Check 與標籤後，自動提交 Approve review。
   - 所有依賴 PR 共用同一條合併序列；落後或衝突時自動要求 Dependabot rebase，並在新
@@ -83,8 +84,8 @@ git push origin vX.Y.Z
   - GitHub concurrency 只保留一個 pending run，因此每次觸發都重新掃描全部
     `dependencies-auto-merge` PR，按 PR number 處理最前一筆，不把事件本身當 FIFO。
   - 通過後 squash merge；GitHub 同步把 PR 標為 `MERGED`／關閉，workflow 再刪除遠端分支。
-  - 自動合併後 explicit dispatch dependency freshness；人工合併由 manifest 的 `main` push
-    觸發，讓維護 issue 跟上最新 `main`。
+  - 自動合併後 explicit dispatch dependency freshness；人工審查 PR 的開關事件也直接同步，
+    人工合併另由 manifest 的 `main` push 觸發，讓維護 issue 跟上最新狀態。
 - 每月 EXE 關鍵依賴排程：`.github/workflows/dependency-freshness.yml`
   - 比較 `pyproject.toml` 宣告的 `yt-dlp`／`imageio-ffmpeg` 基線與 PyPI 最新版。
   - 落後、查詢失敗或仍有 open Dependabot PR 時建立或 reopen／更新、指派同一個 issue；

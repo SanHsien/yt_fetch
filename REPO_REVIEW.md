@@ -98,6 +98,11 @@ issue：dispatch 缺 `actions: write`，人工合併 runtime dependency 不會�
 `main` push 重驗；freshness 使用單一 concurrency、確認最新 main SHA、列出 open Dependabot
 PR，並固定 reopen／更新、指派同一 tracker。追蹤依賴最新且沒有 open PR 才關閉。
 
+最終跨 repo 覆核再發現，人工審查 PR 在開啟或未合併直接關閉時仍不會即時重驗；現在
+`dependabot-review.yml` 對 opened／reopened／synchronize／ready-for-review／closed 都會
+dispatch freshness，closed 不再執行分類或修改已關閉 PR。此路徑只使用 base 上的受信任
+workflow，不 checkout 或執行 PR 程式碼。
+
 - 修復：`3ed4cc9`（2026-07-26）
 - 回歸：dispatch 權限、label bootstrap、人工合併 trigger、concurrency、stale SHA 防護、
   fixed tracker reopen 與 open PR close gate

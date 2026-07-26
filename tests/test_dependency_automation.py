@@ -24,6 +24,10 @@ def test_dependabot_review_and_merge_workflows_keep_strict_guards():
     merge = (ROOT / ".github" / "workflows" / "dependabot-merge.yml").read_text(encoding="utf-8")
 
     assert "pull_request_target:" in review
+    assert "ready_for_review, closed" in review
+    assert "sync-freshness:" in review
+    assert "github.event.action != 'closed'" in review
+    assert "gh workflow run dependency-freshness.yml --ref main" in review
     assert "checks: write" in review
     assert "dependabot[bot]" in review
     assert "25dd0e34f4fe68f24cc83900b1fe3fe149efef98" in review
