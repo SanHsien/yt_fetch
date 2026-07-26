@@ -47,6 +47,7 @@ jobs:
             --ecosystem "${{ steps.metadata.outputs.package-ecosystem }}" \
             --dependency-type "${{ steps.metadata.outputs.dependency-type }}" \
             --update-type "${{ steps.metadata.outputs.update-type }}" \
+            --dependency-names "${{ steps.metadata.outputs.dependency-names }}" \
             --github-output \
             "${file_args[@]}"
 

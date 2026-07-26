@@ -4,6 +4,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 from typing import Dict, Iterable
 
@@ -14,6 +15,7 @@ SAFE_UPDATE_TYPES = {
     "version-update:semver-minor",
 }
 PIP_MANIFESTS = {"pyproject.toml", "requirements.txt"}
+CI_EXERCISED_DEV_PACKAGES = {"black", "flake8", "isort", "pytest", "vermin"}
 
 
 def _manual(reason: str) -> Dict[str, str]:
@@ -29,6 +31,7 @@ def classify_update(
     dependency_type: str,
     update_type: str,
     changed_files: Iterable[str],
+    dependency_names: Iterable[str],
 ) -> Dict[str, str]:
     """回傳 ``auto_merge`` 或 ``manual``，預設一律人工審查。"""
     files = {Path(path).as_posix() for path in changed_files if path}
@@ -47,6 +50,9 @@ def classify_update(
             return _manual("不是可自動處理的直接開發依賴。")
         if not files.issubset(PIP_MANIFESTS):
             return _manual("Python 依賴 PR 超出允許的 manifest 檔案範圍。")
+        names = {re.sub(r"[-_.]+", "-", name).lower() for name in dependency_names if name}
+        if not names or not names.issubset(CI_EXERCISED_DEV_PACKAGES):
+            return _manual("包含未被必要 CI 直接驗證的開發／發布工具。")
         return {
             "decision": "auto_merge",
             "label": AUTO_MERGE_LABEL,
@@ -84,6 +90,7 @@ def main() -> int:
     parser.add_argument("--ecosystem", required=True)
     parser.add_argument("--dependency-type", required=True)
     parser.add_argument("--update-type", required=True)
+    parser.add_argument("--dependency-names", required=True)
     parser.add_argument("--changed-file", action="append", default=[])
     parser.add_argument("--github-output", action="store_true")
     args = parser.parse_args()
@@ -93,6 +100,7 @@ def main() -> int:
         dependency_type=args.dependency_type,
         update_type=args.update_type,
         changed_files=args.changed_file,
+        dependency_names=[name.strip() for name in args.dependency_names.split(",")],
     )
     print(json.dumps(result, ensure_ascii=False))
     if args.github_output:
