@@ -1,0 +1,116 @@
+name: Dependabot guarded merge
+
+on:
+  workflow_run:
+    workflows: ["程式碼檢查", "CodeQL"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "要重新檢查的 Dependabot PR number"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  approve-and-merge:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.pull_requests[0].number != null
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number || inputs.pr_number }}
+      TRIGGER_SHA: ${{ github.event.workflow_run.head_sha || '' }}
+
+    steps:
+      - name: 確認身分、標籤與完整 checks
+        id: gate
+        run: |
+          pr_json="$(gh pr view "$PR_NUMBER" \
+            --json author,baseRefName,headRefOid,labels,reviewDecision,state,url)"
+
+          author="$(jq -r '.author.login' <<< "$pr_json")"
+          base="$(jq -r '.baseRefName' <<< "$pr_json")"
+          state="$(jq -r '.state' <<< "$pr_json")"
+          head_sha="$(jq -r '.headRefOid' <<< "$pr_json")"
+          auto_label="$(jq -r '[.labels[].name == "dependencies-auto-merge"] | any' <<< "$pr_json")"
+
+          if [[ "$author" != "app/dependabot" || "$base" != "main" || "$state" != "OPEN" ]]; then
+            echo "非開啟中的 main Dependabot PR，停止。"
+            exit 0
+          fi
+          if [[ "$auto_label" != "true" ]]; then
+            echo "沒有低風險自動合併標籤，停止。"
+            exit 0
+          fi
+          if [[ -n "$TRIGGER_SHA" && "$TRIGGER_SHA" != "$head_sha" ]]; then
+            echo "workflow_run 已過期，停止。"
+            exit 0
+          fi
+
+          policy_conclusion="$(gh api \
+            "repos/$GITHUB_REPOSITORY/commits/$head_sha/check-runs?per_page=100" \
+            --jq '
+              .check_runs
+              | map(select(.name == "Dependabot policy" and .app.slug == "github-actions"))
+              | sort_by(.started_at)
+              | reverse
+              | .[0].conclusion // "MISSING"
+            ')"
+          if [[ "$policy_conclusion" != "success" ]]; then
+            echo "head SHA 沒有可信的低風險政策 Check，停止（$policy_conclusion）。"
+            exit 0
+          fi
+
+          checks_json="$(gh pr checks "$PR_NUMBER" --json name,state 2>/dev/null || true)"
+          required_checks=(
+            "check (ubuntu-latest, 3.10)"
+            "check (ubuntu-latest, 3.11)"
+            "check (ubuntu-latest, 3.12)"
+            "check (windows-latest, 3.12)"
+            "check (macos-latest, 3.12)"
+            "Python security scan"
+          )
+          for check_name in "${required_checks[@]}"; do
+            check_state="$(jq -r \
+              --arg name "$check_name" \
+              '[.[] | select(.name == $name)][0].state // "MISSING"' \
+              <<< "$checks_json")"
+            if [[ "$check_state" != "SUCCESS" ]]; then
+              echo "$check_name 尚未成功（$check_state），等待下一次 Gate。"
+              exit 0
+            fi
+          done
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+          echo "review_decision=$(jq -r '.reviewDecision // ""' <<< "$pr_json")" >> "$GITHUB_OUTPUT"
+
+      - name: 自動核准
+        if: steps.gate.outputs.ready == 'true' && steps.gate.outputs.review_decision != 'APPROVED'
+        run: gh pr review "$PR_NUMBER" --approve --body "低風險 Dependabot 更新；必要 CI 與 CodeQL 已全部通過。"
+
+      - name: 防止換頭後自動合併
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          EXPECTED_HEAD: ${{ steps.gate.outputs.head_sha }}
+        run: |
+          current_head="$(gh pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid')"
+          test "$current_head" = "$EXPECTED_HEAD"
+
+      - name: Squash 合併
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          gh pr merge "$PR_NUMBER" \
+            --squash \
+            --delete-branch \
+            --match-head-commit "${{ steps.gate.outputs.head_sha }}"

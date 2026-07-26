@@ -16,8 +16,12 @@ updates:
     groups:
       runtime-dependencies:
         dependency-type: "production"
-      development-and-build-dependencies:
+      development-minor-and-patch:
         dependency-type: "development"
+        update-types: ["minor", "patch"]
+      development-major:
+        dependency-type: "development"
+        update-types: ["major"]
 
   # checkout、setup-python、CodeQL、artifact 與 Release actions。
   - package-ecosystem: "github-actions"
