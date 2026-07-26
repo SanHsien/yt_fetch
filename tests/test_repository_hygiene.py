@@ -12,9 +12,10 @@ import pytest
         "download/Test Channel/video.mp4",
         "download/Test Channel/subtitles.zh-Hant.vtt",
         "download/Test Channel/report.json",
+        "dependency-freshness-report.md",
     ],
 )
-def test_download_outputs_are_ignored_at_any_depth(path):
+def test_generated_outputs_are_ignored(path):
     if not shutil.which("git"):
         pytest.skip("需要 git 才能驗證 .gitignore")
 
@@ -23,4 +24,4 @@ def test_download_outputs_are_ignored_at_any_depth(path):
         check=False,
     )
 
-    assert result.returncode == 0, f"下載產物未被 .gitignore 排除：{path}"
+    assert result.returncode == 0, f"產生檔未被 .gitignore 排除：{path}"
