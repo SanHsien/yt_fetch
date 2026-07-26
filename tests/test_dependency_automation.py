@@ -30,6 +30,8 @@ def test_dependabot_review_and_merge_workflows_keep_strict_guards():
     assert "tools/classify_dependabot_update.py" in review
     assert "Dependabot policy" in review
     assert "workflow_run:" in merge
+    assert "group: dependabot-merge-" in merge
+    assert "cancel-in-progress: false" in merge
     assert "GH_REPO: ${{ github.repository }}" in merge
     assert 'author" != "app/dependabot"' in merge
     assert "dependencies-auto-merge" in merge

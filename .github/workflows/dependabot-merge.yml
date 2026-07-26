@@ -15,6 +15,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: dependabot-merge-${{ github.event.workflow_run.pull_requests[0].number || inputs.pr_number }}
+  cancel-in-progress: false
+
 jobs:
   approve-and-merge:
     if: >-
