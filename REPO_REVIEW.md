@@ -103,6 +103,8 @@ PR，並固定 reopen／更新、指派同一 tracker。追蹤依賴最新且沒
 dispatch freshness，closed 不再執行分類或修改已關閉 PR。此路徑只使用 base 上的受信任
 workflow，不 checkout 或執行 PR 程式碼。
 
+- 修復：`d533fc9`（2026-07-26）
+
 - 修復：`3ed4cc9`（2026-07-26）
 - 回歸：dispatch 權限、label bootstrap、人工合併 trigger、concurrency、stale SHA 防護、
   fixed tracker reopen 與 open PR close gate
