@@ -1,10 +1,10 @@
 # AGENTS.md
 
-本檔是 **ChannelCrate**（目前 repository slug：`SanHsien/yt_fetch`）的 AI coding agent 主要維護規則。Claude Code 的工具專屬補充見 [`CLAUDE.md`](CLAUDE.md)；衝突時以本檔為準。
+本檔是 **ChannelDepot**（目前 repository slug：`SanHsien/yt_fetch`）的 AI coding agent 主要維護規則。Claude Code 的工具專屬補充見 [`CLAUDE.md`](CLAUDE.md)；衝突時以本檔為準。
 
 ## 專案定位
 
-**ChannelCrate** 是輕巧的 YouTube 頻道影片保存工具：核心 CLI 在 `yt_fetch.py`，Tkinter GUI 在 `yt_fetch_gui.py`，Windows 受控 Chrome 登入在 `chrome_cdp_cookies.py`。工具透過 `yt-dlp` 取得指定頻道最新可存取影片，套用篩選後下載到本機。
+**ChannelDepot** 是輕巧的 YouTube 頻道影片保存工具：核心 CLI 在 `yt_fetch.py`，Tkinter GUI 在 `yt_fetch_gui.py`，Windows 受控 Chrome 登入在 `chrome_cdp_cookies.py`。工具透過 `yt-dlp` 取得指定頻道最新可存取影片，套用篩選後下載到本機。
 
 專案原名為 `yt_fetch`。在沒有明確 major-version 遷移計畫前，既有模組、CLI 與 Release 檔名屬相容性介面，不因品牌改名而任意更名。
 
