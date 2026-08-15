@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "yt-fetch"
 version = "1.9.2"
-description = "ChannelCrate — portable YouTube channel archiving with GUI, batch workflows, filters, and authorized sign-in cookies"
+description = "ChannelDepot — portable YouTube channel archiving with GUI, batch workflows, filters, and authorized sign-in cookies"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
