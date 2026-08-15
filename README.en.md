@@ -1,4 +1,4 @@
-# yt_fetch
+# ChannelDepot
 
 [繁體中文](README.md)
 
@@ -9,15 +9,17 @@
 [![Platform](https://img.shields.io/badge/Source-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#platform-support)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**yt_fetch** is a lightweight, portable YouTube channel downloader. Give it a channel and a target count; it uses `yt-dlp` to find the newest accessible videos, applies Shorts / quality / date / title / duration filters, and downloads the results locally.
+**ChannelDepot** is a lightweight, portable YouTube channel archiving tool. Give it a channel and a target count; it uses `yt-dlp` to find the newest accessible videos, applies Shorts / quality / date / title / duration filters, and downloads the results locally.
 
 Windows users can use the standalone GUI build. Advanced users can use the CLI, batch channel imports, and their own sign-in cookies.
+
+> The project was formerly named `yt_fetch`. To avoid breaking existing users, `yt_fetch.py`, `yt-fetch`, `yt-fetch-gui`, and the current Windows Release filenames keep their legacy names for now.
 
 > Use it only for content you are authorized to download or back up. Sign-in support does not bypass paywalls, memberships, private videos, or other YouTube access controls.
 
 ## Screenshot
 
-[![yt_fetch main window](docs/screenshots/main-window.png)](docs/screenshots/main-window.png)
+[![ChannelDepot main window](docs/screenshots/main-window.png)](docs/screenshots/main-window.png)
 
 The GUI downloads in the background and shows progress, logs, and results. It can import multiple channels, apply common quality profiles and advanced filters, and export the current download record.
 
@@ -32,7 +34,7 @@ The Windows executable is currently unsigned, so SmartScreen may warn on first l
 
 > The Windows build bundles the `yt-dlp` version current at release time. If YouTube changes and an older build stops working, check for a newer Release first.
 
-## Why yt_fetch
+## Why ChannelDepot
 
 - **One download core for GUI and CLI**: click through the GUI or automate from the command line.
 - **Channel-focused workflow**: designed around “back up the newest N videos from this channel,” not every possible downloader feature.
