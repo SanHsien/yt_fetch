@@ -1,13 +1,13 @@
 ---
-name: yt-fetch
-description: 維護 SanHsien/yt_fetch：以 yt-dlp 為核心的輕量 YouTube 頻道下載工具，提供 CLI、Tkinter GUI、批次頻道、篩選與使用者自己的授權登入 cookies。
+name: channelcrate
+description: 維護 ChannelCrate（SanHsien/yt_fetch）：以 yt-dlp 為核心的輕量 YouTube 頻道影片保存工具，提供 CLI、Tkinter GUI、批次頻道、篩選與使用者自己的授權登入 cookies。
 ---
 
-# yt_fetch quick index
+# ChannelCrate quick index
 
 ## 何時使用
 
-使用者要維護 `SanHsien/yt_fetch`，或調整：
+使用者要維護 **ChannelCrate**（目前 repository slug：`SanHsien/yt_fetch`），或調整：
 
 - 頻道 URL / `@handle` 正規化
 - 最新 N 支影片、Shorts、畫質、日期、標題、長度、字幕篩選
@@ -15,6 +15,8 @@ description: 維護 SanHsien/yt_fetch：以 yt-dlp 為核心的輕量 YouTube �
 - 批次頻道下載與下載紀錄
 - 使用者自己的 cookies / 受控 Chrome 登入
 - Windows EXE、測試或文件
+
+> `yt_fetch.py`、`yt-fetch` 與目前 Release 檔名是既有相容性介面；品牌改名不等於可以直接破壞這些名稱。
 
 ## 先讀
 
