@@ -1,4 +1,4 @@
-# ChannelCrate
+# ChannelDepot
 
 [English](README.en.md)
 
@@ -9,7 +9,7 @@
 [![Platform](https://img.shields.io/badge/Source-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#platform-support)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**ChannelCrate** 是一個輕巧、可攜的 YouTube 頻道影片保存工具。指定頻道與數量後，它會透過 `yt-dlp` 取得最新可存取影片，套用 Shorts／畫質／日期／標題／長度等篩選條件，再下載到本機。
+**ChannelDepot** 是一個輕巧、可攜的 YouTube 頻道影片保存工具。指定頻道與數量後，它會透過 `yt-dlp` 取得最新可存取影片，套用 Shorts／畫質／日期／標題／長度等篩選條件，再下載到本機。
 
 Windows 使用者可直接下載免安裝 GUI；進階使用者也能使用 CLI、批次頻道清單與自己的登入 cookies。
 
@@ -19,7 +19,7 @@ Windows 使用者可直接下載免安裝 GUI；進階使用者也能使用 CLI�
 
 ## 畫面
 
-[![ChannelCrate 主畫面](docs/screenshots/main-window.png)](docs/screenshots/main-window.png)
+[![ChannelDepot 主畫面](docs/screenshots/main-window.png)](docs/screenshots/main-window.png)
 
 GUI 會在背景下載並顯示進度、日誌與結果；可匯入多個頻道、切換常用畫質設定、套用進階篩選並匯出本次下載紀錄。
 
@@ -34,7 +34,7 @@ GUI 會在背景下載並顯示進度、日誌與結果；可匯入多個頻道�
 
 > Windows EXE 會封裝發行當下的 `yt-dlp`。YouTube 改版後若舊版突然無法下載，先檢查是否已有新版 Release。
 
-## 為什麼用 ChannelCrate
+## 為什麼用 ChannelDepot
 
 - **GUI 與 CLI 共用同一套下載核心**：新手直接點選，進階使用者可自動化。
 - **頻道導向**：適合「備份某頻道最新 N 支影片」，而不是做成大而全的萬用下載器。
