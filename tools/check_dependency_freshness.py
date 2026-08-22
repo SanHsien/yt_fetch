@@ -69,14 +69,73 @@ def declared_minimum_version(
     return None
 
 
+HOLD_MARKER = "freshness-hold:"
+DEFERRALS_PATH = ROOT / ".github" / "dependency-deferrals.json"
+
+
+def declared_hold(
+    package_name: str,
+    pyproject_path: Path = ROOT / "pyproject.toml",
+) -> str:
+    """讀取宣告行上的 ``# freshness-hold: <理由>``。
+
+    hold 是長期政策，不是延後：有些下限就是我們要的，每個月再問一次只會讓報告
+    變成噪音。TOML 解析器會丟掉註解，所以直接從原始文字讀那一行。
+    """
+    wanted = normalize_package_name(package_name)
+    try:
+        content = pyproject_path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    for line in content.splitlines():
+        head, marker, comment = line.partition("#")
+        reason = comment.strip()[len(HOLD_MARKER) :].strip()
+        if not marker or not comment.strip().startswith(HOLD_MARKER) or not reason:
+            continue
+        for requirement in re.findall(r"""["']([^"']+)["']""", head):
+            match = re.match(r"\s*([A-Za-z0-9_.-]+)", requirement)
+            if match and normalize_package_name(match.group(1)) == wanted:
+                return reason
+    return ""
+
+
+def load_deferrals(path: Path = DEFERRALS_PATH) -> Dict[str, tuple]:
+    """讀「已評估、這次不升」的決定：套件 -> (當時看到的版本, 理由)。
+
+    記下當時的版本，延後才會自己過期：PyPI 一超過它，報告就重新問。沒有
+    ``deferredLatest`` 的條目直接忽略——那等於永久靜音，不是延後。
+    """
+    try:
+        entries = json.loads(path.read_text(encoding="utf-8")).get("deferrals", {})
+    except (OSError, ValueError):
+        return {}
+    deferrals: Dict[str, tuple] = {}
+    for name, entry in (entries or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        latest = str(entry.get("deferredLatest", "")).strip()
+        reason = str(entry.get("reason", "")).strip()
+        if latest and reason:
+            deferrals[normalize_package_name(name)] = (latest, reason)
+    return deferrals
+
+
+def needs_review(row: Dict[str, object]) -> bool:
+    """落後的下限仍算待辦，除非有 hold 或仍生效的 deferral 蓋住它。"""
+    return bool(row["outdated"]) and not row.get("hold") and not row.get("deferred_reason")
+
+
 def collect_status(packages: Iterable[str]) -> List[Dict[str, object]]:
     """收集每個套件的目前版本、最新版本與是否落後。"""
+    deferrals = load_deferrals()
     rows = []
     for package_name in packages:
         current = declared_minimum_version(package_name)
         latest = fetch_pypi_version(package_name)
         outdated = bool(current and latest and yt_fetch.is_newer_version(latest, current))
         check_failed = current is None or latest is None
+        reviewed, reason = deferrals.get(normalize_package_name(package_name), ("", ""))
+        deferred = bool(reviewed and latest and not yt_fetch.is_newer_version(latest, reviewed))
         rows.append(
             {
                 "name": package_name,
@@ -84,6 +143,8 @@ def collect_status(packages: Iterable[str]) -> List[Dict[str, object]]:
                 "latest": latest or "unknown",
                 "outdated": outdated,
                 "check_failed": check_failed,
+                "hold": declared_hold(package_name),
+                "deferred_reason": reason if deferred else "",
             }
         )
     return rows
@@ -101,7 +162,12 @@ def render_markdown(rows: List[Dict[str, object]]) -> str:
         if row.get("check_failed"):
             status = "檢查失敗"
         else:
-            status = "需要維護" if row["outdated"] else "OK"
+            if row["outdated"] and row.get("hold"):
+                status = f"維持宣告：{row['hold']}"
+            elif row["outdated"] and row.get("deferred_reason"):
+                status = f"已延後（{row['latest']}）：{row['deferred_reason']}"
+            else:
+                status = "需要維護" if row["outdated"] else "OK"
         lines.append(f"| `{row['name']}` | `{row['current']}` | `{row['latest']}` | {status} |")
     lines.extend(
         [
@@ -153,7 +219,7 @@ def main() -> int:
     output_path.write_text(report, encoding="utf-8")
     print(report)
 
-    outdated = any(bool(row["outdated"]) for row in rows)
+    outdated = any(needs_review(row) for row in rows)
     check_failed = any(bool(row["check_failed"]) for row in rows)
     if args.github_output:
         write_github_output(outdated, check_failed, output_path)

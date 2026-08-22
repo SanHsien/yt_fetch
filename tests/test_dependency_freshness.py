@@ -22,6 +22,9 @@ def test_collect_status_marks_outdated(monkeypatch):
             "latest": "2026.6.9",
             "outdated": True,
             "check_failed": False,
+            # 紅燈的兩條正當出口，兩個都空表示「這筆真的要處理」。
+            "hold": "",
+            "deferred_reason": "",
         }
     ]
 
