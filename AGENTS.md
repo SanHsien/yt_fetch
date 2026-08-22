@@ -35,6 +35,7 @@
 - `yt-dlp` 與 YouTube 行為會快速變動；更新下載核心時確認 release note、測試與 Windows build。
 - 依賴、Release 與 security workflow 已存在；沒有具體問題時不要再增加新的治理 workflow。
 - 使用者文件以繁體中文為主；英文 README 同步維護。
+- **合併任何 PR 前先讀 diff**（包含 Dependabot 開的）：`gh pr diff <編號>`。CI 綠燈證明的是「測試沒紅」，不是「改了什麼、該不該進 main」——lockfile 的連鎖升級、transitive major、跨出宣告範圍的變更，只有讀 diff 看得到。核准或合併訊息要寫出讀到什麼、為什麼可接受。`dependabot-merge.yml` 依政策自動核准的低風險類別是唯一例外——那條路徑的把關是分類器與必要 checks；只要是人或 agent 手動按下 merge，就適用本條。
 
 ## REVIEW / CHANGELOG
 
