@@ -30,7 +30,7 @@ def test_hold_marker_is_read_from_the_declaring_line(tmp_path):
 def test_a_comment_without_the_marker_is_not_a_hold(tmp_path):
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
-        "[project]\ndependencies = [\n    \"yt-dlp>=2026.3.17\",  # 一般註解\n]\n",
+        '[project]\ndependencies = [\n    "yt-dlp>=2026.3.17",  # 一般註解\n]\n',
         encoding="utf-8",
     )
 
@@ -49,7 +49,11 @@ def test_deferral_with_a_reviewed_release_is_read(tmp_path):
     path = tmp_path / "deferrals.json"
     path.write_text(
         json.dumps(
-            {"deferrals": {"yt-dlp": {"deferredLatest": "2026.8.19", "reason": "要重打 EXE 才驗得到"}}}
+            {
+                "deferrals": {
+                    "yt-dlp": {"deferredLatest": "2026.8.19", "reason": "要重打 EXE 才驗得到"}
+                }
+            }
         ),
         encoding="utf-8",
     )
